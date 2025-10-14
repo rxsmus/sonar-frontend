@@ -1,9 +1,35 @@
+// Spotify OAuth config
+const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
+const SPOTIFY_REDIRECT_URI = typeof window !== 'undefined' ? window.location.origin : '';
+const SPOTIFY_SCOPES = "user-read-currently-playing user-read-playback-state";
+
+function getSpotifyAuthUrl() {
+  const params = new URLSearchParams({
+    client_id: SPOTIFY_CLIENT_ID,
+    response_type: "code",
+    redirect_uri: SPOTIFY_REDIRECT_URI,
+    scope: SPOTIFY_SCOPES,
+    show_dialog: "true"
+  });
+  return `https://accounts.spotify.com/authorize?${params.toString()}`;
+}
 
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
 
 const App = () => {
+  // Force Spotify login for all users
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      localStorage.setItem('spotify_code', code);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (!localStorage.getItem('spotify_code')) {
+      window.location.href = getSpotifyAuthUrl();
+    }
+  }, []);
   const [currentSong, setCurrentSong] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
