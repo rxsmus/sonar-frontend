@@ -3,23 +3,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
 
-// Spotify OAuth config
-const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
-const SPOTIFY_REDIRECT_URI = typeof window !== 'undefined' ? window.location.origin : '';
-const SPOTIFY_SCOPES = "user-read-currently-playing user-read-playback-state";
-
-function getSpotifyAuthUrl() {
-  const params = new URLSearchParams({
-    client_id: SPOTIFY_CLIENT_ID,
-    response_type: "code",
-    redirect_uri: SPOTIFY_REDIRECT_URI,
-    scope: SPOTIFY_SCOPES,
-    show_dialog: "true"
-  });
-  return `https://accounts.spotify.com/authorize?${params.toString()}`;
-}
-
 const App = () => {
+  const [currentSong, setCurrentSong] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
   // Generate or load a random username for the current user
   const randomNames = [
     "NebulaFox", "PixelPenguin", "EchoWolf", "LunaTiger", "NovaBear", "ShadowOtter", "BlazeHawk", "FrostLion", "VibeKoala", "ZenPanda",
@@ -28,67 +15,29 @@ const App = () => {
   function getRandomName() {
     return randomNames[Math.floor(Math.random() * randomNames.length)];
   }
-  const [username, setUsername] = useState('');
-  useEffect(() => {
-    let saved = localStorage.getItem('username');
-    if (!saved) {
-      saved = getRandomName();
-      localStorage.setItem('username', saved);
-    }
-    setUsername(saved);
-  }, []);
-  // Wait for username to be set before rendering anything else
-  if (!username) {
-    return null;
-  }
-  const [currentSong, setCurrentSong] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [username] = useState(() => {
+    const saved = localStorage.getItem('username');
+    if (saved) return saved;
+    const name = getRandomName();
+    localStorage.setItem('username', name);
+    return name;
+  });
   // Real-time online users
-  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([
+    { name: username, avatar: "https://placehold.co/32x32/1db954/ffffff?text=U" }
+  ]);
 
 
   // Track songId for lobby
   const [songId, setSongId] = useState(null);
   const socketRef = useRef(null);
-  const lobbyRef = useRef(null);
-
-  // Spotify login logic
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (code) {
-      localStorage.setItem('spotify_code', code);
-      window.history.replaceState({}, document.title, window.location.pathname);
-      setIsAuthenticated(true);
-    } else if (localStorage.getItem('spotify_code')) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
-  }, []);
 
   // Fetch from Flask backend and set songId
   useEffect(() => {
-    if (!isAuthenticated) return;
     const fetchNowPlaying = async () => {
       try {
-        const code = localStorage.getItem('spotify_code');
-        const url = code
-          ? `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`
-          : "https://spotcord-1.onrender.com/listening";
-        console.log('[Spotcord] Fetching now playing with code:', code);
-        const response = await fetch(url, { credentials: 'include' });
-        if (response.status === 401) {
-          // Code is invalid or expired, force re-login
-          localStorage.removeItem('spotify_code');
-          setIsAuthenticated(false);
-          window.location.href = getSpotifyAuthUrl();
-          return;
-        }
+        const response = await fetch("https://spotcord-1.onrender.com/listening");
         const data = await response.json();
-        console.log('[Spotcord] Backend /listening response:', data);
         if (data.is_playing && data.track_id) {
           setCurrentSong({
             title: data.track_name,
@@ -113,23 +62,7 @@ const App = () => {
     fetchNowPlaying();
     const interval = setInterval(fetchNowPlaying, 10000); // update every 10s
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
-
-  // Move conditional render block here, after all hooks
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#23272a] text-white">
-        <h1 className="text-3xl font-bold mb-6">Spotcord</h1>
-        <p className="mb-4">Sign in with Spotify to continue</p>
-        <a
-          href={getSpotifyAuthUrl()}
-          className="bg-[#1db954] hover:bg-[#1ed760] text-white font-semibold px-6 py-3 rounded-lg shadow transition"
-        >
-          Log in with Spotify
-        </a>
-      </div>
-    );
-  }
+  }, []);
 
 
   // Update URL to /lobby/<track_id> or /lobby/general when songId changes
@@ -144,18 +77,11 @@ const App = () => {
   // Connect to socket.io namespace for this songId or general
   useEffect(() => {
     const lobby = songId ? songId : 'general';
-    if (lobbyRef.current === lobby && socketRef.current) {
-      // Already connected to correct lobby, do nothing
-      return;
-    }
-    // Disconnect previous socket if exists
     if (socketRef.current) {
       socketRef.current.disconnect();
     }
-    // Connect to new lobby
     const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
     socketRef.current = socket;
-    lobbyRef.current = lobby;
     socket.emit('join', { username, songId });
     socket.on('online-users', (users) => {
       setOnlineUsers(users.map(name => ({
@@ -168,11 +94,36 @@ const App = () => {
     return () => {
       socket.disconnect();
       socketRef.current = null;
-      lobbyRef.current = null;
     };
   }, [username, songId]);
 
-
+  // Fetch from Flask backend
+  useEffect(() => {
+    const fetchNowPlaying = async () => {
+      try {
+  const response = await fetch("https://spotcord-1.onrender.com/listening");
+        const data = await response.json();
+        if (data.is_playing) {
+          setCurrentSong({
+            title: data.track_name,
+            artist: data.artists,
+            album: data.album_name,
+            duration: data.duration,
+            progress: data.progress,
+            albumArt: data.album_image_url,
+            isPlaying: true,
+          });
+        } else {
+          setCurrentSong(null);
+        }
+      } catch (err) {
+        console.error("Error fetching track:", err);
+      }
+    };
+    fetchNowPlaying();
+    const interval = setInterval(fetchNowPlaying, 10000); // update every 10s
+    return () => clearInterval(interval);
+  }, []);
 
 
   const handleSendMessage = () => {
