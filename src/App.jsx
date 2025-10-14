@@ -47,7 +47,7 @@ const App = () => {
   useEffect(() => {
     const fetchNowPlaying = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:3112/listening");
+  const response = await fetch("https://spotcord-1.onrender.com/listening");
         const data = await response.json();
         if (data.is_playing) {
           setCurrentSong({
