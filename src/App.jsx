@@ -38,7 +38,7 @@ const App = () => {
       try {
         const response = await fetch("https://spotcord-1.onrender.com/listening");
         const data = await response.json();
-        if (data.is_playing) {
+        if (data.is_playing && data.track_id) {
           setCurrentSong({
             title: data.track_name,
             artist: data.artists,
@@ -48,14 +48,14 @@ const App = () => {
             albumArt: data.album_image_url,
             isPlaying: true,
           });
-          setSongId(data.track_id || 'general');
+          setSongId(data.track_id);
         } else {
           setCurrentSong(null);
-          setSongId('general');
+          setSongId(null);
         }
       } catch (err) {
         setCurrentSong(null);
-        setSongId('general');
+        setSongId(null);
         console.error("Error fetching track:", err);
       }
     };
@@ -67,8 +67,7 @@ const App = () => {
 
   // Update URL to /lobby/<track_id> or /lobby/general when songId changes
   useEffect(() => {
-    if (!songId) return;
-    const newPath = `/lobby/${songId}`;
+    const newPath = songId ? `/lobby/${songId}` : '/lobby/general';
     if (window.location.pathname !== newPath) {
       window.history.replaceState({}, '', newPath);
     }
@@ -77,11 +76,11 @@ const App = () => {
 
   // Connect to socket.io namespace for this songId or general
   useEffect(() => {
-    if (!songId) return;
+    const lobby = songId ? songId : 'general';
     if (socketRef.current) {
       socketRef.current.disconnect();
     }
-    const socket = io(`https://spotcord.onrender.com/lobby/${songId}`);
+    const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
     socketRef.current = socket;
     socket.emit('join', { username, songId });
     socket.on('online-users', (users) => {
