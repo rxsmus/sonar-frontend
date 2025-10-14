@@ -165,33 +165,7 @@ const App = () => {
     };
   }, [username, songId]);
 
-  // Fetch from Flask backend
-  useEffect(() => {
-    const fetchNowPlaying = async () => {
-      try {
-  const response = await fetch("https://spotcord-1.onrender.com/listening");
-        const data = await response.json();
-        if (data.is_playing) {
-          setCurrentSong({
-            title: data.track_name,
-            artist: data.artists,
-            album: data.album_name,
-            duration: data.duration,
-            progress: data.progress,
-            albumArt: data.album_image_url,
-            isPlaying: true,
-          });
-        } else {
-          setCurrentSong(null);
-        }
-      } catch (err) {
-        console.error("Error fetching track:", err);
-      }
-    };
-    fetchNowPlaying();
-    const interval = setInterval(fetchNowPlaying, 10000); // update every 10s
-    return () => clearInterval(interval);
-  }, []);
+
 
 
   const handleSendMessage = () => {
