@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
@@ -26,13 +27,56 @@ const App = () => {
     { name: username, avatar: "https://placehold.co/32x32/1db954/ffffff?text=U" }
   ]);
 
+
+  // Track songId for lobby
+  const [songId, setSongId] = useState(null);
+
+  // Fetch from Flask backend and set songId
   useEffect(() => {
-  const socket = io('https://spotcord.onrender.com');
-    socket.on('connect', () => {
-      socket.emit('join', username);
-    });
+    const fetchNowPlaying = async () => {
+      try {
+        const response = await fetch("https://spotcord-1.onrender.com/listening");
+        const data = await response.json();
+        if (data.is_playing) {
+          setCurrentSong({
+            title: data.track_name,
+            artist: data.artists,
+            album: data.album_name,
+            duration: data.duration,
+            progress: data.progress,
+            albumArt: data.album_image_url,
+            isPlaying: true,
+          });
+          setSongId(data.track_id || null);
+        } else {
+          setCurrentSong(null);
+          setSongId(null);
+        }
+      } catch (err) {
+        console.error("Error fetching track:", err);
+      }
+    };
+    fetchNowPlaying();
+    const interval = setInterval(fetchNowPlaying, 10000); // update every 10s
+    return () => clearInterval(interval);
+  }, []);
+
+  // Update URL to /lobby/<track_id> when songId changes
+  useEffect(() => {
+    if (songId) {
+      const newPath = `/lobby/${songId}`;
+      if (window.location.pathname !== newPath) {
+        window.history.replaceState({}, '', newPath);
+      }
+    }
+  }, [songId]);
+
+  // Connect to socket.io namespace for this songId
+  useEffect(() => {
+    if (!songId) return;
+    const socket = io(`https://spotcord.onrender.com/lobby/${songId}`);
+    socket.emit('join', { username, songId });
     socket.on('online-users', (users) => {
-      // Map usernames to avatars
       setOnlineUsers(users.map(name => ({
         name,
         avatar: name === username
@@ -41,7 +85,7 @@ const App = () => {
       })));
     });
     return () => socket.disconnect();
-  }, [username]);
+  }, [username, songId]);
 
   // Fetch from Flask backend
   useEffect(() => {
