@@ -61,20 +61,20 @@ const App = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Update URL to /lobby/<track_id> when songId changes
+
+  // Update URL to /lobby/<track_id> or /lobby/general when songId changes
   useEffect(() => {
-    if (songId) {
-      const newPath = `/lobby/${songId}`;
-      if (window.location.pathname !== newPath) {
-        window.history.replaceState({}, '', newPath);
-      }
+    const newPath = songId ? `/lobby/${songId}` : '/lobby/general';
+    if (window.location.pathname !== newPath) {
+      window.history.replaceState({}, '', newPath);
     }
   }, [songId]);
 
-  // Connect to socket.io namespace for this songId
+
+  // Connect to socket.io namespace for this songId or general
   useEffect(() => {
-    if (!songId) return;
-    const socket = io(`https://spotcord.onrender.com/lobby/${songId}`);
+    const lobby = songId ? songId : 'general';
+    const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
     socket.emit('join', { username, songId });
     socket.on('online-users', (users) => {
       setOnlineUsers(users.map(name => ({
