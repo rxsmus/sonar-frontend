@@ -24,9 +24,9 @@ const App = () => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code) {
-      localStorage.setItem('spotify_code', code);
+      sessionStorage.setItem('spotify_code', code);
       window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (!localStorage.getItem('spotify_code')) {
+    } else if (!sessionStorage.getItem('spotify_code')) {
       window.location.href = getSpotifyAuthUrl();
     }
   }, []);
@@ -42,10 +42,10 @@ const App = () => {
     return randomNames[Math.floor(Math.random() * randomNames.length)];
   }
   const [username] = useState(() => {
-    const saved = localStorage.getItem('username');
+    const saved = sessionStorage.getItem('username');
     if (saved) return saved;
     const name = getRandomName();
-    localStorage.setItem('username', name);
+    sessionStorage.setItem('username', name);
     return name;
   });
   // Real-time online users
@@ -63,7 +63,7 @@ const App = () => {
   useEffect(() => {
     const fetchNowPlaying = async () => {
       try {
-        const code = localStorage.getItem('spotify_code');
+        const code = sessionStorage.getItem('spotify_code');
         const url = code
           ? `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`
           : "https://spotcord-1.onrender.com/listening";
