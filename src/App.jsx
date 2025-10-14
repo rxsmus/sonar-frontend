@@ -70,10 +70,10 @@ const App = () => {
   }, []);
 
 
-  // Update URL to /lobby/<track_id> or /lobby/general when songId changes
+  // Update URL to /lobby/<track_id> or /lobby/general ONLY when the current user's songId changes
+  // This ensures the URL is user-specific and not affected by other users
   useEffect(() => {
     const newPath = songId ? `/lobby/${songId}` : '/lobby/general';
-    // Only update the URL if the state (songId) changes and the path is different
     if (window.location.pathname !== newPath) {
       window.history.replaceState({}, '', newPath);
     }
