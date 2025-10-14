@@ -32,6 +32,7 @@ const App = () => {
   }, []);
   const [currentSong, setCurrentSong] = useState(null);
   const [spotifyUser, setSpotifyUser] = useState(null);
+  const [spotifyUserDebug, setSpotifyUserDebug] = useState(null);
   const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -100,11 +101,14 @@ const App = () => {
             const userResp = await fetch(`https://spotcord-1.onrender.com/spotify_user?code=${encodeURIComponent(code)}`);
             const userData = await userResp.json();
             setSpotifyUser(userData.display_name || userData.id || null);
+            setSpotifyUserDebug(JSON.stringify(userData));
           } catch (e) {
             setSpotifyUser(null);
+            setSpotifyUserDebug('Error: ' + e.message);
           }
         } else {
           setSpotifyUser(null);
+          setSpotifyUserDebug(null);
         }
       } catch (err) {
         setCurrentSong(null);
@@ -216,6 +220,9 @@ const App = () => {
                 <span className="ml-4 text-xs text-[#43b581]">({spotifyUser})</span>
               )}
             </h2>
+            {spotifyUserDebug && (
+              <pre className="text-xs text-yellow-400 bg-[#23272a] p-2 rounded mt-2 max-w-xl overflow-x-auto">{spotifyUserDebug}</pre>
+            )}
             {error ? (
               <p className="text-red-400">{error}</p>
             ) : !currentSong ? (
