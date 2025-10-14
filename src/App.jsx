@@ -31,6 +31,7 @@ const App = () => {
     }
   }, []);
   const [currentSong, setCurrentSong] = useState(null);
+  const [spotifyUser, setSpotifyUser] = useState(null);
   const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -75,6 +76,7 @@ const App = () => {
           setError(data.error || 'Not authenticated');
           setCurrentSong(null);
           setSongId(null);
+          setSpotifyUser(null);
           return;
         }
         if (data.is_playing && data.track_id) {
@@ -92,9 +94,22 @@ const App = () => {
           setCurrentSong(null);
           setSongId(null);
         }
+        // Fetch Spotify user profile for debug
+        if (code) {
+          try {
+            const userResp = await fetch(`https://spotcord-1.onrender.com/spotify_user?code=${encodeURIComponent(code)}`);
+            const userData = await userResp.json();
+            setSpotifyUser(userData.display_name || userData.id || null);
+          } catch (e) {
+            setSpotifyUser(null);
+          }
+        } else {
+          setSpotifyUser(null);
+        }
       } catch (err) {
         setCurrentSong(null);
         setSongId(null);
+        setSpotifyUser(null);
         setError('Network or server error');
         console.error("Error fetching track:", err);
       }
@@ -197,6 +212,9 @@ const App = () => {
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#b9bbbe]">
               <Music className="w-5 h-5 text-[#5865f2]" />
               Now Playing
+              {spotifyUser && (
+                <span className="ml-4 text-xs text-[#43b581]">({spotifyUser})</span>
+              )}
             </h2>
             {error ? (
               <p className="text-red-400">{error}</p>
