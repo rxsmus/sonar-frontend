@@ -106,7 +106,8 @@ const App = () => {
     const interval = setInterval(fetchNowPlaying, 10000); // update every 10s
     return () => clearInterval(interval);
   }, [isAuthenticated]);
-  // Show login screen if not authenticated
+  // Show login screen if not authenticated (after all hooks)
+
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#23272a] text-white">
