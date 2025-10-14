@@ -31,6 +31,7 @@ const App = () => {
   // Track songId for lobby
   const [songId, setSongId] = useState(null);
   const socketRef = useRef(null);
+  const lobbyRef = useRef(null);
 
   // Fetch from Flask backend and set songId
   useEffect(() => {
@@ -81,11 +82,18 @@ const App = () => {
   // Connect to socket.io namespace for this songId or general
   useEffect(() => {
     const lobby = songId ? songId : 'general';
+    if (lobbyRef.current === lobby && socketRef.current) {
+      // Already connected to correct lobby, do nothing
+      return;
+    }
+    // Disconnect previous socket if exists
     if (socketRef.current) {
       socketRef.current.disconnect();
     }
+    // Connect to new lobby
     const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
     socketRef.current = socket;
+    lobbyRef.current = lobby;
     socket.emit('join', { username, songId });
     socket.on('online-users', (users) => {
       setOnlineUsers(users.map(name => ({
@@ -98,6 +106,7 @@ const App = () => {
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      lobbyRef.current = null;
     };
   }, [username, songId]);
 
