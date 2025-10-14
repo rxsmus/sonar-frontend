@@ -41,8 +41,10 @@ const App = () => {
         const url = code
           ? `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`
           : "https://spotcord-1.onrender.com/listening";
+        console.log('[Spotcord] Fetching now playing with code:', code);
         const response = await fetch(url, { credentials: 'include' });
         const data = await response.json();
+        console.log('[Spotcord] Backend /listening response:', data);
         if (data.is_playing && data.track_id) {
           setCurrentSong({
             title: data.track_name,
