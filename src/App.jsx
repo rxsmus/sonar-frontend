@@ -36,7 +36,11 @@ const App = () => {
   useEffect(() => {
     const fetchNowPlaying = async () => {
       try {
-        const response = await fetch("https://spotcord-1.onrender.com/listening");
+        const code = localStorage.getItem('spotify_code');
+        const url = code
+          ? `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`
+          : "https://spotcord-1.onrender.com/listening";
+        const response = await fetch(url, { credentials: 'include' });
         const data = await response.json();
         if (data.is_playing && data.track_id) {
           setCurrentSong({
