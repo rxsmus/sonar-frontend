@@ -20,6 +20,10 @@ function getSpotifyAuthUrl() {
 }
 
 const App = () => {
+  // Wait for username to be set before rendering anything else
+  if (!username) {
+    return null;
+  }
   const [currentSong, setCurrentSong] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
