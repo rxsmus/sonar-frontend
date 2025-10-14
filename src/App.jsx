@@ -31,6 +31,7 @@ const App = () => {
     }
   }, []);
   const [currentSong, setCurrentSong] = useState(null);
+  const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   // Generate or load a random username for the current user
@@ -63,12 +64,19 @@ const App = () => {
   useEffect(() => {
     const fetchNowPlaying = async () => {
       try {
+        setError(null);
         const code = sessionStorage.getItem('spotify_code');
         const url = code
           ? `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`
           : "https://spotcord-1.onrender.com/listening";
         const response = await fetch(url, { credentials: 'include' });
         const data = await response.json();
+        if (response.status === 401 || data.error) {
+          setError(data.error || 'Not authenticated');
+          setCurrentSong(null);
+          setSongId(null);
+          return;
+        }
         if (data.is_playing && data.track_id) {
           setCurrentSong({
             title: data.track_name,
@@ -87,6 +95,7 @@ const App = () => {
       } catch (err) {
         setCurrentSong(null);
         setSongId(null);
+        setError('Network or server error');
         console.error("Error fetching track:", err);
       }
     };
@@ -118,7 +127,7 @@ const App = () => {
       socketRef.current.disconnect();
     }
     // Connect to new lobby
-    const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
+  const socket = io(`https://spotcord-1.onrender.com/lobby/${lobby}`);
     socketRef.current = socket;
     lobbyRef.current = lobby;
     socket.emit('join', { username, songId });
@@ -189,7 +198,9 @@ const App = () => {
               <Music className="w-5 h-5 text-[#5865f2]" />
               Now Playing
             </h2>
-            {!currentSong ? (
+            {error ? (
+              <p className="text-red-400">{error}</p>
+            ) : !currentSong ? (
               <p className="text-gray-500">No track is currently playing.</p>
             ) : (
               <div className="flex flex-col md:flex-row items-center gap-6">
