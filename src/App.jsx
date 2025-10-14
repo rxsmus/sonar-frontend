@@ -1,39 +1,9 @@
-// Spotify OAuth config
-const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
-const SPOTIFY_REDIRECT_URI = typeof window !== 'undefined' ? window.location.origin : '';
-const SPOTIFY_SCOPES = "user-read-currently-playing user-read-playback-state";
-
-function getSpotifyAuthUrl() {
-  const params = new URLSearchParams({
-    client_id: SPOTIFY_CLIENT_ID,
-    response_type: "code",
-    redirect_uri: SPOTIFY_REDIRECT_URI,
-    scope: SPOTIFY_SCOPES,
-    show_dialog: "true"
-  });
-  return `https://accounts.spotify.com/authorize?${params.toString()}`;
-}
 
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
 
 const App = () => {
-  // Spotify login logic
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (code) {
-      localStorage.setItem('spotify_code', code);
-      window.history.replaceState({}, document.title, window.location.pathname);
-      setIsAuthenticated(true);
-    } else if (localStorage.getItem('spotify_code')) {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
-  }, []);
   const [currentSong, setCurrentSong] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -63,9 +33,8 @@ const App = () => {
   const socketRef = useRef(null);
   const lobbyRef = useRef(null);
 
-  // Fetch from Flask backend and set songId, only if authenticated
+  // Fetch from Flask backend and set songId
   useEffect(() => {
-    if (!isAuthenticated) return;
     const fetchNowPlaying = async () => {
       try {
         const code = localStorage.getItem('spotify_code');
@@ -73,13 +42,6 @@ const App = () => {
           ? `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`
           : "https://spotcord-1.onrender.com/listening";
         const response = await fetch(url, { credentials: 'include' });
-        if (response.status === 401) {
-          // Code is invalid or expired, force re-login
-          localStorage.removeItem('spotify_code');
-          setIsAuthenticated(false);
-          window.location.href = getSpotifyAuthUrl();
-          return;
-        }
         const data = await response.json();
         if (data.is_playing && data.track_id) {
           setCurrentSong({
@@ -105,23 +67,7 @@ const App = () => {
     fetchNowPlaying();
     const interval = setInterval(fetchNowPlaying, 10000); // update every 10s
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
-  // Show login screen if not authenticated (after all hooks)
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#23272a] text-white">
-        <h1 className="text-3xl font-bold mb-6">Spotcord</h1>
-        <p className="mb-4">Sign in with Spotify to continue</p>
-        <a
-          href={getSpotifyAuthUrl()}
-          className="bg-[#1db954] hover:bg-[#1ed760] text-white font-semibold px-6 py-3 rounded-lg shadow transition"
-        >
-          Log in with Spotify
-        </a>
-      </div>
-    );
-  }
+  }, []);
 
 
   // Update URL to /lobby/<track_id> or /lobby/general ONLY when the current user's songId changes
@@ -165,6 +111,33 @@ const App = () => {
     };
   }, [username, songId]);
 
+  // Fetch from Flask backend
+  useEffect(() => {
+    const fetchNowPlaying = async () => {
+      try {
+  const response = await fetch("https://spotcord-1.onrender.com/listening");
+        const data = await response.json();
+        if (data.is_playing) {
+          setCurrentSong({
+            title: data.track_name,
+            artist: data.artists,
+            album: data.album_name,
+            duration: data.duration,
+            progress: data.progress,
+            albumArt: data.album_image_url,
+            isPlaying: true,
+          });
+        } else {
+          setCurrentSong(null);
+        }
+      } catch (err) {
+        console.error("Error fetching track:", err);
+      }
+    };
+    fetchNowPlaying();
+    const interval = setInterval(fetchNowPlaying, 10000); // update every 10s
+    return () => clearInterval(interval);
+  }, []);
 
 
   const handleSendMessage = () => {
