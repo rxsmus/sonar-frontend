@@ -31,17 +31,17 @@ const App = () => {
   function getRandomName() {
     return randomNames[Math.floor(Math.random() * randomNames.length)];
   }
-  const [username] = useState(() => {
-    const saved = localStorage.getItem('username');
-    if (saved) return saved;
-    const name = getRandomName();
-    localStorage.setItem('username', name);
-    return name;
-  });
+  const [username, setUsername] = useState('');
+  useEffect(() => {
+    let saved = localStorage.getItem('username');
+    if (!saved) {
+      saved = getRandomName();
+      localStorage.setItem('username', saved);
+    }
+    setUsername(saved);
+  }, []);
   // Real-time online users
-  const [onlineUsers, setOnlineUsers] = useState([
-    { name: username, avatar: "https://placehold.co/32x32/1db954/ffffff?text=U" }
-  ]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
 
   // Track songId for lobby
