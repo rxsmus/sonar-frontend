@@ -1,5 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
+import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
+
 // Spotify OAuth config
 const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
 const SPOTIFY_REDIRECT_URI = typeof window !== 'undefined' ? window.location.origin : '';
@@ -15,8 +18,6 @@ function getSpotifyAuthUrl() {
   });
   return `https://accounts.spotify.com/authorize?${params.toString()}`;
 }
-import { io } from 'socket.io-client';
-import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
 
 const App = () => {
   const [currentSong, setCurrentSong] = useState(null);
