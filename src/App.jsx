@@ -1,14 +1,13 @@
 // Spotify OAuth config
-const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
-const SPOTIFY_REDIRECT_URI = typeof window !== 'undefined' ? window.location.origin : '';
-const SPOTIFY_SCOPES = "user-read-currently-playing user-read-playback-state";
 
+// Redirect to backend /callback for Spotify OAuth
 function getSpotifyAuthUrl() {
+  const backendCallback = "https://spotcord-1.onrender.com/callback";
   const params = new URLSearchParams({
-    client_id: SPOTIFY_CLIENT_ID,
+    client_id: "51dd9a50cd994a7e8e374fc2169c6f25",
     response_type: "code",
-    redirect_uri: SPOTIFY_REDIRECT_URI,
-    scope: SPOTIFY_SCOPES,
+    redirect_uri: backendCallback,
+    scope: "user-read-currently-playing user-read-playback-state",
     show_dialog: "true"
   });
   return `https://accounts.spotify.com/authorize?${params.toString()}`;
@@ -21,14 +20,18 @@ import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-rea
 const App = () => {
   // Force Spotify login for all users
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (code) {
-      sessionStorage.setItem('spotify_code', code);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (!sessionStorage.getItem('spotify_code')) {
-      window.location.href = getSpotifyAuthUrl();
-    }
+    // Remove any old code from sessionStorage
+    sessionStorage.removeItem('spotify_code');
+    // If not authenticated, redirect to Spotify login (via backend /callback)
+    fetch('https://spotcord-1.onrender.com/spotify_user', { credentials: 'include' })
+      .then(res => {
+        if (res.status === 401) {
+          window.location.href = getSpotifyAuthUrl();
+        }
+      })
+      .catch(() => {
+        window.location.href = getSpotifyAuthUrl();
+      });
   }, []);
   const [currentSong, setCurrentSong] = useState(null);
   const [spotifyUser, setSpotifyUser] = useState(null);
@@ -67,11 +70,7 @@ const App = () => {
     const fetchNowPlaying = async () => {
       try {
         setError(null);
-        const code = sessionStorage.getItem('spotify_code');
-        const url = code
-          ? `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`
-          : "https://spotcord-1.onrender.com/listening";
-        const response = await fetch(url, { credentials: 'include' });
+        const response = await fetch("https://spotcord-1.onrender.com/listening", { credentials: 'include' });
         const data = await response.json();
         if (response.status === 401 || data.error) {
           setError(data.error || 'Not authenticated');
@@ -96,19 +95,14 @@ const App = () => {
           setSongId(null);
         }
         // Fetch Spotify user profile for debug
-        if (code) {
-          try {
-            const userResp = await fetch(`https://spotcord-1.onrender.com/spotify_user?code=${encodeURIComponent(code)}`);
-            const userData = await userResp.json();
-            setSpotifyUser(userData.display_name || userData.id || null);
-            setSpotifyUserDebug(JSON.stringify(userData));
-          } catch (e) {
-            setSpotifyUser(null);
-            setSpotifyUserDebug('Error: ' + e.message);
-          }
-        } else {
+        try {
+          const userResp = await fetch("https://spotcord-1.onrender.com/spotify_user", { credentials: 'include' });
+          const userData = await userResp.json();
+          setSpotifyUser(userData.display_name || userData.id || null);
+          setSpotifyUserDebug(JSON.stringify(userData));
+        } catch (e) {
           setSpotifyUser(null);
-          setSpotifyUserDebug(null);
+          setSpotifyUserDebug('Error: ' + e.message);
         }
       } catch (err) {
         setCurrentSong(null);
