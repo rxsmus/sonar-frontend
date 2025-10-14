@@ -31,12 +31,17 @@ const App = () => {
   // Track songId for lobby
   const [songId, setSongId] = useState(null);
   const socketRef = useRef(null);
+  const lobbyRef = useRef(null);
 
   // Fetch from Flask backend and set songId
   useEffect(() => {
     const fetchNowPlaying = async () => {
       try {
-        const response = await fetch("https://spotcord-1.onrender.com/listening");
+        const code = localStorage.getItem('spotify_code');
+        const url = code
+          ? `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`
+          : "https://spotcord-1.onrender.com/listening";
+        const response = await fetch(url, { credentials: 'include' });
         const data = await response.json();
         if (data.is_playing && data.track_id) {
           setCurrentSong({
@@ -77,11 +82,18 @@ const App = () => {
   // Connect to socket.io namespace for this songId or general
   useEffect(() => {
     const lobby = songId ? songId : 'general';
+    if (lobbyRef.current === lobby && socketRef.current) {
+      // Already connected to correct lobby, do nothing
+      return;
+    }
+    // Disconnect previous socket if exists
     if (socketRef.current) {
       socketRef.current.disconnect();
     }
+    // Connect to new lobby
     const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
     socketRef.current = socket;
+    lobbyRef.current = lobby;
     socket.emit('join', { username, songId });
     socket.on('online-users', (users) => {
       setOnlineUsers(users.map(name => ({
@@ -94,6 +106,7 @@ const App = () => {
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      lobbyRef.current = null;
     };
   }, [username, songId]);
 
