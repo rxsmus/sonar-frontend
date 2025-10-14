@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
 
@@ -30,6 +30,7 @@ const App = () => {
 
   // Track songId for lobby
   const [songId, setSongId] = useState(null);
+  const socketRef = useRef(null);
 
   // Fetch from Flask backend and set songId
   useEffect(() => {
@@ -47,12 +48,14 @@ const App = () => {
             albumArt: data.album_image_url,
             isPlaying: true,
           });
-          setSongId(data.track_id || null);
+          setSongId(data.track_id || 'general');
         } else {
           setCurrentSong(null);
-          setSongId(null);
+          setSongId('general');
         }
       } catch (err) {
+        setCurrentSong(null);
+        setSongId('general');
         console.error("Error fetching track:", err);
       }
     };
@@ -64,7 +67,8 @@ const App = () => {
 
   // Update URL to /lobby/<track_id> or /lobby/general when songId changes
   useEffect(() => {
-    const newPath = songId ? `/lobby/${songId}` : '/lobby/general';
+    if (!songId) return;
+    const newPath = `/lobby/${songId}`;
     if (window.location.pathname !== newPath) {
       window.history.replaceState({}, '', newPath);
     }
@@ -73,8 +77,12 @@ const App = () => {
 
   // Connect to socket.io namespace for this songId or general
   useEffect(() => {
-    const lobby = songId ? songId : 'general';
-    const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
+    if (!songId) return;
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+    const socket = io(`https://spotcord.onrender.com/lobby/${songId}`);
+    socketRef.current = socket;
     socket.emit('join', { username, songId });
     socket.on('online-users', (users) => {
       setOnlineUsers(users.map(name => ({
@@ -84,7 +92,10 @@ const App = () => {
           : `https://placehold.co/32x32/5865f2/ffffff?text=${encodeURIComponent(name[0] || 'U')}`
       })));
     });
-    return () => socket.disconnect();
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
   }, [username, songId]);
 
   // Fetch from Flask backend
