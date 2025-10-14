@@ -20,13 +20,6 @@ function getSpotifyAuthUrl() {
 }
 
 const App = () => {
-  // Wait for username to be set before rendering anything else
-  if (!username) {
-    return null;
-  }
-  const [currentSong, setCurrentSong] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
   // Generate or load a random username for the current user
   const randomNames = [
     "NebulaFox", "PixelPenguin", "EchoWolf", "LunaTiger", "NovaBear", "ShadowOtter", "BlazeHawk", "FrostLion", "VibeKoala", "ZenPanda",
@@ -44,6 +37,13 @@ const App = () => {
     }
     setUsername(saved);
   }, []);
+  // Wait for username to be set before rendering anything else
+  if (!username) {
+    return null;
+  }
+  const [currentSong, setCurrentSong] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
   // Real-time online users
   const [onlineUsers, setOnlineUsers] = useState([]);
 
