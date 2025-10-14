@@ -110,6 +110,8 @@ const App = () => {
     const interval = setInterval(fetchNowPlaying, 10000); // update every 10s
     return () => clearInterval(interval);
   }, [isAuthenticated]);
+
+  // Move conditional render block here, after all hooks
   if (!isAuthenticated) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#23272a] text-white">
