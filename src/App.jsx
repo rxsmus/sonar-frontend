@@ -50,7 +50,7 @@ const App = () => {
   });
   // Real-time online users
   const [onlineUsers, setOnlineUsers] = useState([
-    { name: username, avatar: "https://placehold.co/32x32/1db954/ffffff?text=U" }
+    { id: username + '-' + Math.random().toString(36).slice(2, 8), name: username, avatar: "https://placehold.co/32x32/1db954/ffffff?text=U" }
   ]);
 
 
@@ -124,6 +124,7 @@ const App = () => {
     socket.emit('join', { username, songId });
     socket.on('online-users', (users) => {
       setOnlineUsers(users.map(name => ({
+        id: name + '-' + Math.random().toString(36).slice(2, 8),
         name,
         avatar: name === username
           ? "https://placehold.co/32x32/1db954/ffffff?text=U"
