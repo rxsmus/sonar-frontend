@@ -17,7 +17,7 @@ function getSpotifyAuthUrl() {
 import React, { useState, useEffect, useRef } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { io } from 'socket.io-client';
-import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
+import { MessageCircle, Music, User, Send, Heart, Play, Pause, LogOut } from 'lucide-react';
 
 const App = () => {
   // Force Spotify login for all users
@@ -229,21 +229,20 @@ const App = () => {
     {/* Sidebar */}
     <aside className="w-20 min-w-16 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-3 gap-4 justify-between">
       <div className="flex flex-col items-center gap-4">
-        {/* Spotcord logo removed */}
         {spotifyUser && (
           <span className="text-xs text-[#43b581] text-center">{spotifyUser}</span>
         )}
         <div className="flex flex-col gap-2 w-full mt-2">
-          <div className="flex bg-[#23272a] rounded-full p-1 w-full">
+          <div className="flex flex-col bg-[#23272a] rounded-2xl p-1 w-full">
             <button
-              className={`flex-1 px-2 py-1 rounded-full text-xs font-semibold focus:outline-none transition-colors duration-150 ${mode === 'artist' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
+              className={`w-full px-2 py-2 rounded-t-xl text-xs font-semibold focus:outline-none transition-colors duration-150 ${mode === 'artist' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
               onClick={() => {
                 setMode('artist');
                 sessionStorage.setItem('lobby_mode', 'artist');
               }}
             >Artist</button>
             <button
-              className={`flex-1 px-2 py-1 rounded-full text-xs font-semibold focus:outline-none transition-colors duration-150 ${mode === 'song' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
+              className={`w-full px-2 py-2 rounded-b-xl text-xs font-semibold focus:outline-none transition-colors duration-150 ${mode === 'song' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
               onClick={() => {
                 setMode('song');
                 sessionStorage.setItem('lobby_mode', 'song');
@@ -257,14 +256,14 @@ const App = () => {
         </div>
       </div>
       <button
-        className="w-10 h-10 bg-[#ed4245] text-white rounded-xl flex items-center justify-center text-lg font-bold hover:bg-[#b3242a] transition self-center mb-2"
+        className="w-10 h-10 bg-[#ed4245] text-white rounded-xl flex items-center justify-center hover:bg-[#b3242a] transition self-center mb-2"
         title="Log out"
         onClick={() => {
           sessionStorage.clear();
           window.location.href = getSpotifyAuthUrl();
         }}
       >
-        <span>L</span>
+        <LogOut className="w-6 h-6" />
       </button>
     </aside>
 
@@ -326,12 +325,12 @@ const App = () => {
             </div>
             <div className="border-t border-[#36393f] p-4 flex gap-3 bg-black rounded-b-2xl">
               <input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                className="flex-1 bg-[#36393f] border border-[#23272a] rounded-lg px-4 py-3 text-white placeholder-[#72767d] focus:outline-none focus:ring-2 focus:ring-[#5865f2]"
-              />
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message..."
+                  className="flex-1 bg-black border border-[#23272a] rounded-lg px-4 py-3 text-white placeholder-[#72767d] focus:outline-none focus:ring-2 focus:ring-[#5865f2]"
+                />
               <button
                 onClick={handleSendMessage}
                 className="bg-[#5865f2] hover:bg-[#4752c4] rounded-lg p-3 transition-all shadow text-white"
