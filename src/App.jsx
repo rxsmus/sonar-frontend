@@ -18,7 +18,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { io } from 'socket.io-client';
 import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
-import logoutIcon from './assets/icons/logout-svgrepo-com.svg';
+import logoutIcon from '/assets/icons/logout-svgrepo-com.svg';
 
 const App = () => {
   // Force Spotify login for all users
