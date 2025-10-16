@@ -68,16 +68,24 @@ const App = () => {
       try {
         setError(null);
         const code = sessionStorage.getItem('spotify_code');
-        const url = code
-          ? `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`
-          : "https://spotcord-1.onrender.com/listening";
-        const response = await fetch(url, { credentials: 'include' });
+        if (!code) {
+          setError('No Spotify code found. Please log in.');
+          setCurrentSong(null);
+          setSongId(null);
+          setSpotifyUser(null);
+          setSpotifyUserDebug(null);
+          return;
+        }
+        // Always send code with every request
+        const listeningUrl = `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`;
+        const response = await fetch(listeningUrl, { credentials: 'include' });
         const data = await response.json();
         if (response.status === 401 || data.error) {
           setError(data.error || 'Not authenticated');
           setCurrentSong(null);
           setSongId(null);
           setSpotifyUser(null);
+          setSpotifyUserDebug(null);
           return;
         }
         if (data.is_playing && data.track_id) {
@@ -95,25 +103,21 @@ const App = () => {
           setCurrentSong(null);
           setSongId(null);
         }
-        // Fetch Spotify user profile for debug
-        if (code) {
-          try {
-            const userResp = await fetch(`https://spotcord-1.onrender.com/spotify_user?code=${encodeURIComponent(code)}`);
-            const userData = await userResp.json();
-            setSpotifyUser(userData.display_name || userData.id || null);
-            setSpotifyUserDebug(JSON.stringify(userData));
-          } catch (e) {
-            setSpotifyUser(null);
-            setSpotifyUserDebug('Error: ' + e.message);
-          }
-        } else {
+        // Always fetch Spotify user profile for this code
+        try {
+          const userResp = await fetch(`https://spotcord-1.onrender.com/spotify_user?code=${encodeURIComponent(code)}`);
+          const userData = await userResp.json();
+          setSpotifyUser(userData.display_name || userData.id || null);
+          setSpotifyUserDebug(JSON.stringify(userData));
+        } catch (e) {
           setSpotifyUser(null);
-          setSpotifyUserDebug(null);
+          setSpotifyUserDebug('Error: ' + e.message);
         }
       } catch (err) {
         setCurrentSong(null);
         setSongId(null);
         setSpotifyUser(null);
+        setSpotifyUserDebug(null);
         setError('Network or server error');
         console.error("Error fetching track:", err);
       }
