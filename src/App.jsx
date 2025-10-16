@@ -18,7 +18,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { io } from 'socket.io-client';
 import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
-import logoutIcon from 'assets/icons/logout-svgrepo-com.svg';
 
 const App = () => {
   // Force Spotify login for all users
@@ -265,7 +264,7 @@ const App = () => {
         }}
         aria-label="Log out"
       >
-        <img src={logoutIcon} alt="Log out" className="w-6 h-6 invert" />
+        <img src="/icons/logout-svgrepo-com.svg" alt="Log out" className="w-6 h-6 invert" />
         <span className="sr-only">Log out</span>
       </button>
     </aside>
