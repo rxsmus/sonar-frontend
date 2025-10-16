@@ -17,7 +17,8 @@ function getSpotifyAuthUrl() {
 import React, { useState, useEffect, useRef } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { io } from 'socket.io-client';
-import { MessageCircle, Music, User, Send, Heart, Play, Pause, LogOut } from 'lucide-react';
+import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
+import LogOut from 'lucide-react/lib/icons/log-out';
 
 const App = () => {
   // Force Spotify login for all users
@@ -265,6 +266,7 @@ const App = () => {
         aria-label="Log out"
       >
         <LogOut className="w-6 h-6" strokeWidth={2.5} />
+        <span className="sr-only">Log out</span>
       </button>
     </aside>
 
