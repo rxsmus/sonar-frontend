@@ -225,16 +225,16 @@ const App = () => {
   };
 
   return (
-  <div className="fixed inset-0 w-screen h-screen bg-[#18181b] text-gray-200 font-sans overflow-auto" style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif' }}>
+  <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-[#23272a] via-[#2c2f33] to-[#23272a] text-gray-100 font-sans overflow-auto">
       {/* Header */}
-  <header className="w-full px-6 py-4 flex items-center justify-between bg-[#23272a] border-b border-gray-800 shadow-md">
+  <header className="w-full px-6 py-4 flex items-center justify-between bg-[#23272a] border-b border-[#36393f] shadow-sm">
   <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-md border border-gray-800">
+          <div className="w-10 h-10 bg-[#5865f2] rounded-xl flex items-center justify-center shadow">
             <Music className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight" style={{ fontFamily: 'Inter, Segoe UI, Arial, sans-serif' }}>Spotcord</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Spotcord</h1>
           {spotifyUser && (
-            <span className="ml-4 text-sm text-blue-400">Logged in as <span className="font-semibold">{spotifyUser}</span></span>
+            <span className="ml-4 text-sm text-[#43b581]">Logged in as <span className="font-semibold">{spotifyUser}</span></span>
           )}
           {/* Mode Toggle Switch */}
           <div className="ml-6 flex items-center gap-2">
@@ -257,7 +257,7 @@ const App = () => {
           </div>
           {/* Logout button for stateless session */}
           <button
-            className="ml-4 px-5 py-2 bg-blue-500 text-white rounded-full text-xs font-semibold border border-gray-800 shadow-md hover:bg-indigo-500 transition-all"
+            className="ml-4 px-3 py-1 bg-[#ed4245] text-white rounded-lg text-xs font-semibold hover:bg-[#b3242a] transition"
             onClick={() => {
               sessionStorage.clear();
               window.location.href = getSpotifyAuthUrl();
@@ -267,13 +267,13 @@ const App = () => {
           </button>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-[#23272a] rounded-full px-5 py-2 text-gray-200 text-sm shadow-md border border-gray-800">
+          <div className="flex items-center gap-2 bg-[#2c2f33] rounded-lg px-4 py-2 text-gray-300 text-sm shadow">
             <User className="w-4 h-4" />
             <span>{onlineUsers.length} online</span>
           </div>
-          {/* Mode Toggle Switch - moved right, cobalt style */}
+          {/* Mode Toggle Switch - moved right */}
           <div className="flex items-center gap-2 ml-4">
-            <span className={mode === 'artist' ? 'text-indigo-400 font-semibold' : 'text-gray-400'}>Artist</span>
+            <span className={mode === 'artist' ? 'text-[#43b581] font-semibold' : 'text-gray-400'}>Artist</span>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
@@ -285,10 +285,10 @@ const App = () => {
                 }}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer dark:bg-gray-700 peer-checked:bg-blue-500 transition-all border border-gray-800"></div>
-              <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-5 border border-gray-300"></span>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#5865f2] rounded-full peer dark:bg-gray-700 peer-checked:bg-[#5865f2] transition-all"></div>
+              <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-5"></span>
             </label>
-            <span className={mode === 'song' ? 'text-indigo-400 font-semibold' : 'text-gray-400'}>Song</span>
+            <span className={mode === 'song' ? 'text-[#43b581] font-semibold' : 'text-gray-400'}>Song</span>
           </div>
         </div>
       </header>
