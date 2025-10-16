@@ -146,7 +146,7 @@ const App = () => {
       socketRef.current.disconnect();
     }
     // Connect to new lobby
-  const socket = io(`https://spotcord-2.onrender.com/lobby/${lobby}`);
+  const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
     socketRef.current = socket;
     lobbyRef.current = lobby;
     socket.emit('join', { username, songId });
