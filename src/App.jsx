@@ -136,7 +136,7 @@ const App = () => {
       }
     };
     fetchNowPlaying();
-    const interval = setInterval(fetchNowPlaying, 1000); // update every 1s
+    const interval = setInterval(fetchNowPlaying, 5000); // update every 1s
     return () => clearInterval(interval);
   }, []);
 
@@ -225,60 +225,56 @@ const App = () => {
   };
 
   return (
-  <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-auto">
-    {/* Header */}
-  <header className="w-full px-6 py-4 flex items-center justify-between bg-[#18191a] border-b border-[#23272a] shadow-sm">
-  <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#5865f2] rounded-xl flex items-center justify-center shadow">
-            <Music className="w-6 h-6 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Spotcord</h1>
-          {spotifyUser && (
-            <span className="ml-4 text-sm text-[#43b581]">Logged in as <span className="font-semibold">{spotifyUser}</span></span>
-          )}
-          {/* Logout button for stateless session */}
+  <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-auto flex">
+    {/* Sidebar */}
+    <aside className="w-64 min-w-56 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-6 gap-8">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 bg-[#5865f2] rounded-xl flex items-center justify-center shadow">
+          <Music className="w-6 h-6 text-white" />
+        </div>
+        <h1 className="text-2xl font-bold text-white tracking-tight">Spotcord</h1>
+      </div>
+      {spotifyUser && (
+        <span className="text-sm text-[#43b581] mb-2">Logged in as <span className="font-semibold">{spotifyUser}</span></span>
+      )}
+      <button
+        className="px-3 py-1 bg-[#ed4245] text-white rounded-lg text-xs font-semibold hover:bg-[#b3242a] transition mb-4"
+        onClick={() => {
+          sessionStorage.clear();
+          window.location.href = getSpotifyAuthUrl();
+        }}
+      >
+        Log out
+      </button>
+      <div className="flex flex-col gap-4 mt-4">
+        <div className="flex bg-[#23272a] rounded-full p-1 w-full">
           <button
-            className="ml-4 px-3 py-1 bg-[#ed4245] text-white rounded-lg text-xs font-semibold hover:bg-[#b3242a] transition"
+            className={`flex-1 px-4 py-1 rounded-full text-sm font-semibold focus:outline-none transition-colors duration-150 ${mode === 'artist' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
             onClick={() => {
-              sessionStorage.clear();
-              window.location.href = getSpotifyAuthUrl();
+              setMode('artist');
+              sessionStorage.setItem('lobby_mode', 'artist');
             }}
-          >
-            Log out
-          </button>
+          >Artist</button>
+          <button
+            className={`flex-1 px-4 py-1 rounded-full text-sm font-semibold focus:outline-none transition-colors duration-150 ${mode === 'song' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
+            onClick={() => {
+              setMode('song');
+              sessionStorage.setItem('lobby_mode', 'song');
+            }}
+          >Song</button>
         </div>
-        <div className="flex items-center gap-4">
-          {/* Mode Toggle Switch - moved right */}
-          <div className="flex items-center gap-2 ml-4">
-            <div className="flex bg-[#23272a] rounded-full p-1">
-              <button
-                className={`px-4 py-1 rounded-full text-sm font-semibold focus:outline-none transition-colors duration-150 ${mode === 'artist' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
-                onClick={() => {
-                  setMode('artist');
-                  sessionStorage.setItem('lobby_mode', 'artist');
-                }}
-              >Artist</button>
-              <button
-                className={`px-4 py-1 rounded-full text-sm font-semibold focus:outline-none transition-colors duration-150 ${mode === 'song' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
-                onClick={() => {
-                  setMode('song');
-                  sessionStorage.setItem('lobby_mode', 'song');
-                }}
-              >Song</button>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-[#2c2f33] rounded-lg px-4 py-2 text-gray-300 text-sm shadow">
-            <User className="w-4 h-4" />
-            <span>{onlineUsers.length} online</span>
-          </div>
+        <div className="flex items-center gap-2 bg-[#23272a] rounded-lg px-4 py-2 text-gray-300 text-sm shadow border border-[#36393f]">
+          <User className="w-4 h-4" />
+          <span>{onlineUsers.length} online</span>
         </div>
-      </header>
+      </div>
+    </aside>
 
-  <main className="w-full h-full px-2 py-6 flex flex-col lg:flex-row gap-6">
+  <main className="flex-1 h-full px-8 py-8 flex flex-col lg:flex-row gap-8">
           {/* Current Song Section */}
         {/* Main Content (Current Song + Chat) */}
         <section className="flex-1 flex flex-col gap-6">
-          <div className="bg-[#23272a] rounded-2xl p-6 shadow-lg border border-[#18191a]">
+          <div className="bg-black rounded-2xl p-6 shadow-lg border border-[#36393f]">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#b9bbbe]">
               <Music className="w-5 h-5 text-[#5865f2]" />
               Now Playing
@@ -306,7 +302,7 @@ const App = () => {
             )}
           </div>
           {/* Chat Section */}
-          <div className="flex-1 flex flex-col bg-[#23272a] rounded-2xl shadow-lg border border-[#18191a]">
+          <div className="flex-1 flex flex-col bg-black rounded-2xl shadow-lg border border-[#36393f]">
             <div className="px-6 py-4 border-b border-[#23272a] bg-[#23272a] rounded-t-2xl">
               <h3 className="text-lg font-semibold flex items-center gap-2 text-[#b9bbbe]">
                 <MessageCircle className="w-5 h-5" />
@@ -350,7 +346,7 @@ const App = () => {
 
         {/* Sidebar */}
         <aside className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-6">
-          <div className="bg-[#23272a] rounded-2xl p-6 shadow-lg border border-[#18191a]">
+          <div className="bg-black rounded-2xl p-6 shadow-lg border border-[#36393f]">
             <h3 className="text-md font-semibold mb-4 flex items-center gap-2 text-[#b9bbbe]">
               <div className="w-3 h-3 bg-[#43b581] rounded-full mr-2"></div>
               Online Users
