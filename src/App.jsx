@@ -15,6 +15,7 @@ function getSpotifyAuthUrl() {
 }
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Analytics } from "@vercel/analytics/next";
 import { io } from 'socket.io-client';
 import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
 
@@ -323,6 +324,7 @@ const App = () => {
           </div>
         </aside>
       </main>
+      <Analytics />
   </div>
   );
 };
