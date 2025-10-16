@@ -206,6 +206,16 @@ const App = () => {
           {spotifyUser && (
             <span className="ml-4 text-sm text-[#43b581]">Logged in as <span className="font-semibold">{spotifyUser}</span></span>
           )}
+          {/* Logout button for stateless session */}
+          <button
+            className="ml-4 px-3 py-1 bg-[#ed4245] text-white rounded-lg text-xs font-semibold hover:bg-[#b3242a] transition"
+            onClick={() => {
+              sessionStorage.clear();
+              window.location.reload();
+            }}
+          >
+            Log out
+          </button>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 bg-[#2c2f33] rounded-lg px-4 py-2 text-gray-300 text-sm shadow">
