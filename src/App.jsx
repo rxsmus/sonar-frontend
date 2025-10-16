@@ -256,7 +256,7 @@ const App = () => {
         </div>
       </div>
       <button
-        className="w-10 h-10 bg-[#ed4245] text-white rounded-xl flex items-center justify-center hover:bg-[#b3242a] transition self-center mb-2"
+        className="w-14 h-14 bg-[#ed4245] text-white rounded-2xl flex items-center justify-center hover:bg-[#b3242a] transition self-center mb-2"
         title="Log out"
         onClick={() => {
           sessionStorage.clear();
@@ -264,7 +264,7 @@ const App = () => {
         }}
         aria-label="Log out"
       >
-        <img src="/icons/logout-svgrepo-com.svg" alt="Log out" className="w-6 h-6 invert" />
+        <img src="/icons/logout-svgrepo-com.svg" alt="Log out" className="w-8 h-8 filter brightness-0 invert" />
         <span className="sr-only">Log out</span>
       </button>
     </aside>
