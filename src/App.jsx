@@ -40,12 +40,43 @@ const App = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   // Generate or load a random username for the current user
-  const randomNames = [
-    "NebulaFox", "PixelPenguin", "EchoWolf", "LunaTiger", "NovaBear", "ShadowOtter", "BlazeHawk", "FrostLion", "VibeKoala", "ZenPanda",
-    "MossyFawn", "CometSeal", "JazzMoose", "RiftBison", "GaleMoth", "RuneCrab", "DuskMarten", "QuillJay", "SableMole", "WispMink"
-  ];
+  const colorMap = {
+    Red:   '#ef4444',
+    Blue:  '#3b82f6',
+    Green: '#22c55e',
+    Yellow:'#eab308',
+    Purple:'#a21caf',
+    Orange:'#f97316',
+    Pink:  '#ec4899',
+    Teal:  '#14b8a6',
+    Cyan:  '#06b6d4',
+    Indigo:'#6366f1',
+    Violet:'#8b5cf6',
+    Lime:  '#84cc16',
+    Amber: '#f59e42',
+    Brown: '#92400e',
+    Gray:  '#6b7280',
+    Black: '#18181b',
+    White: '#f3f4f6',
+  };
+  const animalEmojis = {
+    Fox: '🦊', Penguin: '🐧', Wolf: '🐺', Tiger: '🐯', Bear: '🐻', Otter: '🦦', Hawk: '🦅', Lion: '🦁', Koala: '🐨', Panda: '🐼',
+    Fawn: '🦌', Seal: '🦭', Moose: '🫎', Bison: '🦬', Moth: '🦋', Crab: '🦀', Marten: '🦫', Jay: '🐦', Mole: '🐹', Mink: '🦦',
+    Cat: '🐱', Dog: '🐶', Rabbit: '🐰', Horse: '🐴', Eagle: '🦅', Shark: '🦈', Dolphin: '🐬', Falcon: '🦅', Swan: '🦢', Goose: '🪿'
+  };
+  const colors = Object.keys(colorMap);
+  const animals = Object.keys(animalEmojis);
   function getRandomName() {
-    return randomNames[Math.floor(Math.random() * randomNames.length)];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const animal = animals[Math.floor(Math.random() * animals.length)];
+    const number = Math.floor(Math.random() * 999) + 1;
+    return `${color}-${animal}-${number}`;
+  }
+
+  // Helper to extract color and animal from username
+  function parseUsername(username) {
+    const [color, animal] = username.split('-');
+    return { color, animal };
   }
   const [username] = useState(() => {
     const saved = sessionStorage.getItem('username');
@@ -56,7 +87,7 @@ const App = () => {
   });
   // Real-time online users
   const [onlineUsers, setOnlineUsers] = useState([
-    { id: username + '-' + Math.random().toString(36).slice(2, 8), name: username, avatar: "https://placehold.co/32x32/1db954/ffffff?text=U" }
+    { id: username + '-' + Math.random().toString(36).slice(2, 8), name: username }
   ]);
 
 
@@ -183,10 +214,7 @@ const App = () => {
     socket.on('online-users', (users) => {
       setOnlineUsers(users.map(name => ({
         id: name + '-' + Math.random().toString(36).slice(2, 8),
-        name,
-        avatar: name === username
-          ? "https://placehold.co/32x32/1db954/ffffff?text=U"
-          : `https://placehold.co/32x32/5865f2/ffffff?text=${encodeURIComponent(name[0] || 'U')}`
+        name
       })));
     });
     socket.on('chat-history', (history) => {
@@ -310,20 +338,26 @@ const App = () => {
               <p className="text-xs text-[#72767d] mt-1">{onlineUsers.length} online</p>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4 bg-black">
-              {messages.map(msg => (
-                <div key={msg.id} className="flex items-start gap-3">
-                  <img src={msg.avatar} alt={msg.user} className="w-10 h-10 rounded-full border border-[#23272a]" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-sm text-white">{msg.user}</span>
-                      <span className="text-[#72767d] text-xs">{msg.timestamp}</span>
+              {messages.map(msg => {
+                const { color, animal } = parseUsername(msg.user);
+                return (
+                  <div key={msg.id} className="flex items-start gap-3">
+                    <div
+                      className="w-10 h-10 rounded-full border border-[#23272a] flex items-center justify-center text-2xl"
+                      style={{ backgroundColor: colorMap[color] || '#23272a' }}
+                    >
+                      {animalEmojis[animal] || '❓'}
                     </div>
-                    <p className="text-[#dcddde] text-sm mb-2">{msg.message}</p>
-
-                    {/* Like button removed */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-sm text-white">{msg.user}</span>
+                        <span className="text-[#72767d] text-xs">{msg.timestamp}</span>
+                      </div>
+                      <p className="text-[#dcddde] text-sm mb-2">{msg.message}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="border-t border-[#36393f] p-4 flex gap-3 bg-black rounded-b-2xl">
               <input
@@ -351,12 +385,20 @@ const App = () => {
               Online Users
             </h3>
             <div className="flex flex-col gap-2">
-              {onlineUsers.map(u => (
-                <div key={u.id} className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded-lg transition-colors">
-                  <img src={u.avatar} alt={u.name} className="w-8 h-8 rounded-full border border-[#23272a]" />
-                  <span className="text-sm text-white">{u.name}</span>
-                </div>
-              ))}
+              {onlineUsers.map(u => {
+                const { color, animal } = parseUsername(u.name);
+                return (
+                  <div key={u.id} className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded-lg transition-colors">
+                    <div
+                      className="w-8 h-8 rounded-full border border-[#23272a] flex items-center justify-center text-xl"
+                      style={{ backgroundColor: colorMap[color] || '#23272a' }}
+                    >
+                      {animalEmojis[animal] || '❓'}
+                    </div>
+                    <span className="text-sm text-white">{u.name}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </aside>
