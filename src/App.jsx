@@ -1,7 +1,13 @@
-// Spotify OAuth config
+// Spotify OAuth config with local/production detection
 const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
-const SPOTIFY_REDIRECT_URI = "https://spotcord-1.onrender.com/callback";
 const SPOTIFY_SCOPES = "user-read-currently-playing user-read-playback-state user-read-private";
+const isLocal = window.location.hostname === "localhost";
+const SPOTIFY_REDIRECT_URI = isLocal
+  ? "http://localhost:3112/callback"
+  : "https://spotcord-1.onrender.com/callback";
+const BACKEND_URL = isLocal
+  ? "http://localhost:3112"
+  : "https://spotcord-1.onrender.com";
 
 function getSpotifyAuthUrl() {
   const params = new URLSearchParams({
@@ -83,8 +89,8 @@ const App = () => {
           return;
         }
         // Always send code with every request
-        const listeningUrl = `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`;
-        const response = await fetch(listeningUrl, { credentials: 'include' });
+  const listeningUrl = `${BACKEND_URL}/listening?code=${encodeURIComponent(code)}`;
+  const response = await fetch(listeningUrl, { credentials: 'include' });
         const data = await response.json();
         if (response.status === 401 || data.error) {
           setError(data.error || 'Not authenticated');
@@ -118,7 +124,7 @@ const App = () => {
         }
         // Always fetch Spotify user profile for this code
         try {
-          const userResp = await fetch(`https://spotcord-1.onrender.com/spotify_user?code=${encodeURIComponent(code)}`);
+          const userResp = await fetch(`${BACKEND_URL}/spotify_user?code=${encodeURIComponent(code)}`);
           const userData = await userResp.json();
           setSpotifyUser(userData.display_name || userData.id || null);
           setSpotifyUserDebug(JSON.stringify(userData));
@@ -175,7 +181,7 @@ const App = () => {
       socketRef.current.disconnect();
     }
     // Connect to new lobby
-    const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
+  const socket = io(`${BACKEND_URL.replace('http', 'ws')}/lobby/${lobby}`);
     socketRef.current = socket;
     lobbyRef.current = lobby;
     setMessages([]); // Clear chat when switching lobbies
