@@ -119,7 +119,7 @@ const App = () => {
       }
     };
     fetchNowPlaying();
-    const interval = setInterval(fetchNowPlaying, 10000); // update every 10s
+    const interval = setInterval(fetchNowPlaying, 1000); // update every 1s
     return () => clearInterval(interval);
   }, []);
 
