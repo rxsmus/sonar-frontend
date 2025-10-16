@@ -3,7 +3,7 @@ const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
 const SPOTIFY_SCOPES = "user-read-currently-playing user-read-playback-state user-read-private";
 const isLocal = window.location.hostname === "localhost";
 const SPOTIFY_REDIRECT_URI = isLocal
-  ? "http://localhost:3112/callback"
+  ? "http://127.0.0.1:3112/callback"
   : "https://spotcord-1.onrender.com/callback";
 const BACKEND_URL = isLocal
   ? "http://localhost:3112"
