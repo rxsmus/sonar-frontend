@@ -211,7 +211,7 @@ const App = () => {
             className="ml-4 px-3 py-1 bg-[#ed4245] text-white rounded-lg text-xs font-semibold hover:bg-[#b3242a] transition"
             onClick={() => {
               sessionStorage.clear();
-              window.location.reload();
+              window.location.href = getSpotifyAuthUrl();
             }}
           >
             Log out
