@@ -225,9 +225,9 @@ const App = () => {
   };
 
   return (
-  <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-[#23272a] via-[#2c2f33] to-[#23272a] text-gray-100 overflow-auto">
-      {/* Header */}
-  <header className="w-full px-6 py-4 flex items-center justify-between bg-[#23272a] border-b border-[#36393f] shadow-sm">
+  <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-auto">
+    {/* Header */}
+  <header className="w-full px-6 py-4 flex items-center justify-between bg-[#18191a] border-b border-[#23272a] shadow-sm">
   <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-[#5865f2] rounded-xl flex items-center justify-center shadow">
             <Music className="w-6 h-6 text-white" />
@@ -250,22 +250,22 @@ const App = () => {
         <div className="flex items-center gap-4">
           {/* Mode Toggle Switch - moved right */}
           <div className="flex items-center gap-2 ml-4">
-            <span className={mode === 'artist' ? 'text-[#43b581] font-semibold' : 'text-gray-400'}>Artist</span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={mode === 'song'}
-                onChange={e => {
-                  const newMode = e.target.checked ? 'song' : 'artist';
-                  setMode(newMode);
-                  sessionStorage.setItem('lobby_mode', newMode);
+            <div className="flex bg-[#23272a] rounded-full p-1">
+              <button
+                className={`px-4 py-1 rounded-full text-sm font-semibold focus:outline-none transition-colors duration-150 ${mode === 'artist' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
+                onClick={() => {
+                  setMode('artist');
+                  sessionStorage.setItem('lobby_mode', 'artist');
                 }}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#5865f2] rounded-full peer dark:bg-gray-700 peer-checked:bg-[#5865f2] transition-all"></div>
-              <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-5"></span>
-            </label>
-            <span className={mode === 'song' ? 'text-[#43b581] font-semibold' : 'text-gray-400'}>Song</span>
+              >Artist</button>
+              <button
+                className={`px-4 py-1 rounded-full text-sm font-semibold focus:outline-none transition-colors duration-150 ${mode === 'song' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
+                onClick={() => {
+                  setMode('song');
+                  sessionStorage.setItem('lobby_mode', 'song');
+                }}
+              >Song</button>
+            </div>
           </div>
           <div className="flex items-center gap-2 bg-[#2c2f33] rounded-lg px-4 py-2 text-gray-300 text-sm shadow">
             <User className="w-4 h-4" />
@@ -278,7 +278,7 @@ const App = () => {
           {/* Current Song Section */}
         {/* Main Content (Current Song + Chat) */}
         <section className="flex-1 flex flex-col gap-6">
-          <div className="bg-[#2c2f33] rounded-2xl p-6 shadow-lg border border-[#23272a]">
+          <div className="bg-[#23272a] rounded-2xl p-6 shadow-lg border border-[#18191a]">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#b9bbbe]">
               <Music className="w-5 h-5 text-[#5865f2]" />
               Now Playing
@@ -306,7 +306,7 @@ const App = () => {
             )}
           </div>
           {/* Chat Section */}
-          <div className="flex-1 flex flex-col bg-[#2c2f33] rounded-2xl shadow-lg border border-[#23272a]">
+          <div className="flex-1 flex flex-col bg-[#23272a] rounded-2xl shadow-lg border border-[#18191a]">
             <div className="px-6 py-4 border-b border-[#23272a] bg-[#23272a] rounded-t-2xl">
               <h3 className="text-lg font-semibold flex items-center gap-2 text-[#b9bbbe]">
                 <MessageCircle className="w-5 h-5" />
@@ -350,7 +350,7 @@ const App = () => {
 
         {/* Sidebar */}
         <aside className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-6">
-          <div className="bg-[#2c2f33] rounded-2xl p-6 shadow-lg border border-[#23272a]">
+          <div className="bg-[#23272a] rounded-2xl p-6 shadow-lg border border-[#18191a]">
             <h3 className="text-md font-semibold mb-4 flex items-center gap-2 text-[#b9bbbe]">
               <div className="w-3 h-3 bg-[#43b581] rounded-full mr-2"></div>
               Online Users
