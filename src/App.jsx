@@ -199,6 +199,9 @@ const App = () => {
             <Music className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Spotcord</h1>
+          {spotifyUser && (
+            <span className="ml-4 text-sm text-[#43b581]">Logged in as <span className="font-semibold">{spotifyUser}</span></span>
+          )}
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 bg-[#2c2f33] rounded-lg px-4 py-2 text-gray-300 text-sm shadow">
@@ -216,9 +219,6 @@ const App = () => {
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#b9bbbe]">
               <Music className="w-5 h-5 text-[#5865f2]" />
               Now Playing
-              {spotifyUser && (
-                <span className="ml-4 text-xs text-[#43b581]">({spotifyUser})</span>
-              )}
             </h2>
             {spotifyUserDebug && (
               <pre className="text-xs text-yellow-400 bg-[#23272a] p-2 rounded mt-2 max-w-xl overflow-x-auto">{spotifyUserDebug}</pre>
