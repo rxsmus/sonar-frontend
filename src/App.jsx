@@ -227,7 +227,7 @@ const App = () => {
   return (
   <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-auto flex">
     {/* Sidebar */}
-    <aside className="w-20 min-w-16 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-3 gap-4 justify-between">
+  <aside className="w-28 min-w-24 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-3 gap-4 justify-between">
       <div className="flex flex-col items-center gap-4">
         {spotifyUser && (
           <span className="text-xs text-[#43b581] text-center">{spotifyUser}</span>
@@ -262,8 +262,9 @@ const App = () => {
           sessionStorage.clear();
           window.location.href = getSpotifyAuthUrl();
         }}
+        aria-label="Log out"
       >
-        <LogOut className="w-6 h-6" />
+        <LogOut className="w-6 h-6" strokeWidth={2.5} />
       </button>
     </aside>
 
