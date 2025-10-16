@@ -227,47 +227,45 @@ const App = () => {
   return (
   <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-auto flex">
     {/* Sidebar */}
-    <aside className="w-64 min-w-56 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-6 gap-8">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-[#5865f2] rounded-xl flex items-center justify-center shadow">
-          <Music className="w-6 h-6 text-white" />
+    <aside className="w-20 min-w-16 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-3 gap-4 justify-between">
+      <div className="flex flex-col items-center gap-4">
+        {/* Spotcord logo removed */}
+        {spotifyUser && (
+          <span className="text-xs text-[#43b581] text-center">{spotifyUser}</span>
+        )}
+        <div className="flex flex-col gap-2 w-full mt-2">
+          <div className="flex bg-[#23272a] rounded-full p-1 w-full">
+            <button
+              className={`flex-1 px-2 py-1 rounded-full text-xs font-semibold focus:outline-none transition-colors duration-150 ${mode === 'artist' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
+              onClick={() => {
+                setMode('artist');
+                sessionStorage.setItem('lobby_mode', 'artist');
+              }}
+            >Artist</button>
+            <button
+              className={`flex-1 px-2 py-1 rounded-full text-xs font-semibold focus:outline-none transition-colors duration-150 ${mode === 'song' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
+              onClick={() => {
+                setMode('song');
+                sessionStorage.setItem('lobby_mode', 'song');
+              }}
+            >Song</button>
+          </div>
+          <div className="flex items-center justify-center gap-1 bg-[#23272a] rounded-lg px-2 py-1 text-gray-300 text-xs shadow border border-[#36393f] w-full">
+            <User className="w-4 h-4" />
+            <span>{onlineUsers.length}</span>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Spotcord</h1>
       </div>
-      {spotifyUser && (
-        <span className="text-sm text-[#43b581] mb-2">Logged in as <span className="font-semibold">{spotifyUser}</span></span>
-      )}
       <button
-        className="px-3 py-1 bg-[#ed4245] text-white rounded-lg text-xs font-semibold hover:bg-[#b3242a] transition mb-4"
+        className="w-10 h-10 bg-[#ed4245] text-white rounded-xl flex items-center justify-center text-lg font-bold hover:bg-[#b3242a] transition self-center mb-2"
+        title="Log out"
         onClick={() => {
           sessionStorage.clear();
           window.location.href = getSpotifyAuthUrl();
         }}
       >
-        Log out
+        <span>L</span>
       </button>
-      <div className="flex flex-col gap-4 mt-4">
-        <div className="flex bg-[#23272a] rounded-full p-1 w-full">
-          <button
-            className={`flex-1 px-4 py-1 rounded-full text-sm font-semibold focus:outline-none transition-colors duration-150 ${mode === 'artist' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
-            onClick={() => {
-              setMode('artist');
-              sessionStorage.setItem('lobby_mode', 'artist');
-            }}
-          >Artist</button>
-          <button
-            className={`flex-1 px-4 py-1 rounded-full text-sm font-semibold focus:outline-none transition-colors duration-150 ${mode === 'song' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
-            onClick={() => {
-              setMode('song');
-              sessionStorage.setItem('lobby_mode', 'song');
-            }}
-          >Song</button>
-        </div>
-        <div className="flex items-center gap-2 bg-[#23272a] rounded-lg px-4 py-2 text-gray-300 text-sm shadow border border-[#36393f]">
-          <User className="w-4 h-4" />
-          <span>{onlineUsers.length} online</span>
-        </div>
-      </div>
     </aside>
 
   <main className="flex-1 h-full px-8 py-8 flex flex-col lg:flex-row gap-8">
@@ -303,14 +301,14 @@ const App = () => {
           </div>
           {/* Chat Section */}
           <div className="flex-1 flex flex-col bg-black rounded-2xl shadow-lg border border-[#36393f]">
-            <div className="px-6 py-4 border-b border-[#23272a] bg-[#23272a] rounded-t-2xl">
+            <div className="px-6 py-4 border-b border-[#36393f] bg-black rounded-t-2xl">
               <h3 className="text-lg font-semibold flex items-center gap-2 text-[#b9bbbe]">
                 <MessageCircle className="w-5 h-5" />
                 Chat
               </h3>
               <p className="text-xs text-[#72767d] mt-1">{onlineUsers.length} online</p>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-black">
               {messages.map(msg => (
                 <div key={msg.id} className="flex items-start gap-3">
                   <img src={msg.avatar} alt={msg.user} className="w-10 h-10 rounded-full border border-[#23272a]" />
@@ -326,7 +324,7 @@ const App = () => {
                 </div>
               ))}
             </div>
-            <div className="border-t border-[#23272a] p-4 flex gap-3 bg-[#23272a] rounded-b-2xl">
+            <div className="border-t border-[#36393f] p-4 flex gap-3 bg-black rounded-b-2xl">
               <input
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
