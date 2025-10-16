@@ -1,9 +1,10 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'ibm', monospace;
   line-height: 1.5;
   font-weight: 400;
 
@@ -15,6 +16,18 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@font-face {
+  font-family: 'ibm';
+  src: url('fonts/ibm-plex-mono-latin-400-normal.Dm_PoFIZ.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  font-family: 'ibm', sans-serif;
 }
 
 a {

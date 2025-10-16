@@ -225,7 +225,7 @@ const App = () => {
   };
 
   return (
-  <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-[#23272a] via-[#2c2f33] to-[#23272a] text-gray-100 font-sans overflow-auto">
+  <div className="fixed inset-0 w-screen h-screen bg-gradient-to-br from-[#23272a] via-[#2c2f33] to-[#23272a] text-gray-100 overflow-auto">
       {/* Header */}
   <header className="w-full px-6 py-4 flex items-center justify-between bg-[#23272a] border-b border-[#36393f] shadow-sm">
   <div className="flex items-center gap-3">
