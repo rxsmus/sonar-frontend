@@ -193,9 +193,8 @@ const App = () => {
     setNewMessage("");
   };
 
-  const handleLikeMessage = (id) => {
-    setMessages(messages.map(m => m.id === id ? { ...m, likes: m.likes + 1 } : m));
-  };
+
+  // Like functionality removed
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleSendMessage();
@@ -282,13 +281,8 @@ const App = () => {
                       <span className="text-[#72767d] text-xs">{msg.timestamp}</span>
                     </div>
                     <p className="text-[#dcddde] text-sm mb-2">{msg.message}</p>
-                    <button
-                      onClick={() => handleLikeMessage(msg.id)}
-                      className="flex items-center gap-1 text-[#72767d] hover:text-[#ed4245] text-xs"
-                    >
-                      <Heart className="w-3 h-3" />
-                      <span>{msg.likes}</span>
-                    </button>
+
+                    {/* Like button removed */}
                   </div>
                 </div>
               ))}
