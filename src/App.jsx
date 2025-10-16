@@ -32,7 +32,6 @@ const App = () => {
   }, []);
   const [currentSong, setCurrentSong] = useState(null);
   const [spotifyUser, setSpotifyUser] = useState(null);
-  const [spotifyUserDebug, setSpotifyUserDebug] = useState(null);
   const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
