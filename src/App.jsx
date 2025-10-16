@@ -32,6 +32,8 @@ const App = () => {
     }
   }, []);
   const [currentSong, setCurrentSong] = useState(null);
+  // Mode: 'song' or 'artist'
+  const [mode, setMode] = useState(() => sessionStorage.getItem('lobby_mode') || 'song');
   const [spotifyUser, setSpotifyUser] = useState(null);
   const [spotifyUserDebug, setSpotifyUserDebug] = useState(null);
   const [error, setError] = useState(null);
@@ -63,7 +65,10 @@ const App = () => {
   const socketRef = useRef(null);
   const lobbyRef = useRef(null);
 
-  // Fetch from Flask backend and set songId
+  // Track artist for artist mode
+  const [artist, setArtist] = useState(null);
+
+  // Fetch from Flask backend and set songId/artist
   useEffect(() => {
     const fetchNowPlaying = async () => {
       try {
@@ -100,9 +105,16 @@ const App = () => {
             isPlaying: true,
           });
           setSongId(data.track_id);
+          // Use first artist for artist mode
+          if (data.artists) {
+            setArtist(data.artists.split(',')[0].trim());
+          } else {
+            setArtist(null);
+          }
         } else {
           setCurrentSong(null);
           setSongId(null);
+          setArtist(null);
         }
         // Always fetch Spotify user profile for this code
         try {
@@ -129,20 +141,31 @@ const App = () => {
   }, []);
 
 
-  // Update URL to /lobby/<track_id> or /lobby/general ONLY when the current user's songId changes
-  // This ensures the URL is user-specific and not affected by other users
+
+  // Update URL to /lobby/<track_id> or /lobby/<artist> or /lobby/general based on mode
   useEffect(() => {
-    const newPath = songId ? `/lobby/${songId}` : '/lobby/general';
+    let newPath = '/lobby/general';
+    if (mode === 'artist' && artist) {
+      newPath = `/lobby/${encodeURIComponent(artist)}`;
+    } else if (mode === 'song' && songId) {
+      newPath = `/lobby/${songId}`;
+    }
     if (window.location.pathname !== newPath) {
       window.history.replaceState({}, '', newPath);
     }
-  }, [songId]);
+  }, [mode, songId, artist]);
 
 
   // Connect to socket.io namespace for this songId or general
 
+
   useEffect(() => {
-    const lobby = songId ? songId : 'general';
+    let lobby = 'general';
+    if (mode === 'artist' && artist) {
+      lobby = encodeURIComponent(artist);
+    } else if (mode === 'song' && songId) {
+      lobby = songId;
+    }
     if (lobbyRef.current === lobby && socketRef.current) {
       // Already connected to correct lobby, do nothing
       return;
@@ -156,7 +179,7 @@ const App = () => {
     socketRef.current = socket;
     lobbyRef.current = lobby;
     setMessages([]); // Clear chat when switching lobbies
-    socket.emit('join', { username, songId });
+    socket.emit('join', { username, songId, artist });
     socket.on('online-users', (users) => {
       setOnlineUsers(users.map(name => ({
         id: name + '-' + Math.random().toString(36).slice(2, 8),
@@ -177,7 +200,7 @@ const App = () => {
       socketRef.current = null;
       lobbyRef.current = null;
     };
-  }, [username, songId]);
+  }, [username, songId, artist, mode]);
 
 
 
@@ -213,6 +236,25 @@ const App = () => {
           {spotifyUser && (
             <span className="ml-4 text-sm text-[#43b581]">Logged in as <span className="font-semibold">{spotifyUser}</span></span>
           )}
+          {/* Mode Toggle Switch */}
+          <div className="ml-6 flex items-center gap-2">
+            <span className={mode === 'artist' ? 'text-[#43b581] font-semibold' : 'text-gray-400'}>Artist</span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={mode === 'song'}
+                onChange={e => {
+                  const newMode = e.target.checked ? 'song' : 'artist';
+                  setMode(newMode);
+                  sessionStorage.setItem('lobby_mode', newMode);
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#5865f2] rounded-full peer dark:bg-gray-700 peer-checked:bg-[#5865f2] transition-all"></div>
+              <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-5"></span>
+            </label>
+            <span className={mode === 'song' ? 'text-[#43b581] font-semibold' : 'text-gray-400'}>Song</span>
+          </div>
           {/* Logout button for stateless session */}
           <button
             className="ml-4 px-3 py-1 bg-[#ed4245] text-white rounded-lg text-xs font-semibold hover:bg-[#b3242a] transition"
