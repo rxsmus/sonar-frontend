@@ -139,6 +139,7 @@ const App = () => {
 
 
   // Connect to socket.io namespace for this songId or general
+
   useEffect(() => {
     const lobby = songId ? songId : 'general';
     if (lobbyRef.current === lobby && socketRef.current) {
@@ -150,9 +151,10 @@ const App = () => {
       socketRef.current.disconnect();
     }
     // Connect to new lobby
-  const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
+    const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
     socketRef.current = socket;
     lobbyRef.current = lobby;
+    setMessages([]); // Clear chat when switching lobbies
     socket.emit('join', { username, songId });
     socket.on('online-users', (users) => {
       setOnlineUsers(users.map(name => ({
@@ -163,6 +165,12 @@ const App = () => {
           : `https://placehold.co/32x32/5865f2/ffffff?text=${encodeURIComponent(name[0] || 'U')}`
       })));
     });
+    socket.on('chat-history', (history) => {
+      setMessages(history);
+    });
+    socket.on('new-message', (msg) => {
+      setMessages(prev => [...prev, msg]);
+    });
     return () => {
       socket.disconnect();
       socketRef.current = null;
@@ -172,17 +180,16 @@ const App = () => {
 
 
 
+
   const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !socketRef.current) return;
     const msg = {
-      id: messages.length + 1,
       user: username,
       avatar: "https://placehold.co/40x40/1db954/ffffff?text=U",
       message: newMessage,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      likes: 0
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
-    setMessages([...messages, msg]);
+    socketRef.current.emit('send-message', msg);
     setNewMessage("");
   };
 
