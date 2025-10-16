@@ -234,9 +234,7 @@ const App = () => {
               <Music className="w-5 h-5 text-[#5865f2]" />
               Now Playing
             </h2>
-            {spotifyUserDebug && (
-              <pre className="text-xs text-yellow-400 bg-[#23272a] p-2 rounded mt-2 max-w-xl overflow-x-auto">{spotifyUserDebug}</pre>
-            )}
+            {/* Debug output removed as requested */}
             {error ? (
               <p className="text-red-400">{error}</p>
             ) : !currentSong ? (
