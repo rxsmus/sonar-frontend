@@ -236,25 +236,6 @@ const App = () => {
           {spotifyUser && (
             <span className="ml-4 text-sm text-[#43b581]">Logged in as <span className="font-semibold">{spotifyUser}</span></span>
           )}
-          {/* Mode Toggle Switch */}
-          <div className="ml-6 flex items-center gap-2">
-            <span className={mode === 'artist' ? 'text-[#43b581] font-semibold' : 'text-gray-400'}>Artist</span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={mode === 'song'}
-                onChange={e => {
-                  const newMode = e.target.checked ? 'song' : 'artist';
-                  setMode(newMode);
-                  sessionStorage.setItem('lobby_mode', newMode);
-                }}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#5865f2] rounded-full peer dark:bg-gray-700 peer-checked:bg-[#5865f2] transition-all"></div>
-              <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-5"></span>
-            </label>
-            <span className={mode === 'song' ? 'text-[#43b581] font-semibold' : 'text-gray-400'}>Song</span>
-          </div>
           {/* Logout button for stateless session */}
           <button
             className="ml-4 px-3 py-1 bg-[#ed4245] text-white rounded-lg text-xs font-semibold hover:bg-[#b3242a] transition"
@@ -267,10 +248,6 @@ const App = () => {
           </button>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-[#2c2f33] rounded-lg px-4 py-2 text-gray-300 text-sm shadow">
-            <User className="w-4 h-4" />
-            <span>{onlineUsers.length} online</span>
-          </div>
           {/* Mode Toggle Switch - moved right */}
           <div className="flex items-center gap-2 ml-4">
             <span className={mode === 'artist' ? 'text-[#43b581] font-semibold' : 'text-gray-400'}>Artist</span>
@@ -289,6 +266,10 @@ const App = () => {
               <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-5"></span>
             </label>
             <span className={mode === 'song' ? 'text-[#43b581] font-semibold' : 'text-gray-400'}>Song</span>
+          </div>
+          <div className="flex items-center gap-2 bg-[#2c2f33] rounded-lg px-4 py-2 text-gray-300 text-sm shadow">
+            <User className="w-4 h-4" />
+            <span>{onlineUsers.length} online</span>
           </div>
         </div>
       </header>
