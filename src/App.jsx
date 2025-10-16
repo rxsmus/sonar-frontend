@@ -32,6 +32,7 @@ const App = () => {
   }, []);
   const [currentSong, setCurrentSong] = useState(null);
   const [spotifyUser, setSpotifyUser] = useState(null);
+  const [spotifyUserDebug, setSpotifyUserDebug] = useState(null);
   const [error, setError] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -93,6 +94,21 @@ const App = () => {
         } else {
           setCurrentSong(null);
           setSongId(null);
+        }
+        // Fetch Spotify user profile for debug
+        if (code) {
+          try {
+            const userResp = await fetch(`https://spotcord-1.onrender.com/spotify_user?code=${encodeURIComponent(code)}`);
+            const userData = await userResp.json();
+            setSpotifyUser(userData.display_name || userData.id || null);
+            setSpotifyUserDebug(JSON.stringify(userData));
+          } catch (e) {
+            setSpotifyUser(null);
+            setSpotifyUserDebug('Error: ' + e.message);
+          }
+        } else {
+          setSpotifyUser(null);
+          setSpotifyUserDebug(null);
         }
       } catch (err) {
         setCurrentSong(null);
