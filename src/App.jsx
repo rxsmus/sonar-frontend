@@ -225,7 +225,7 @@ const App = () => {
   };
 
   return (
-  <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-auto flex">
+  <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
     {/* Sidebar */}
   <aside className="w-28 min-w-24 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-3 gap-4 justify-between">
       <div className="flex flex-col items-center gap-4">
@@ -301,7 +301,7 @@ const App = () => {
             )}
           </div>
           {/* Chat Section */}
-          <div className="flex-1 flex flex-col bg-black rounded-2xl shadow-lg border border-[#36393f]">
+          <div className="flex-1 flex flex-col bg-black rounded-2xl shadow-lg border border-[#36393f] min-h-0">
             <div className="px-6 py-4 border-b border-[#36393f] bg-black rounded-t-2xl">
               <h3 className="text-lg font-semibold flex items-center gap-2 text-[#b9bbbe]">
                 <MessageCircle className="w-5 h-5" />
@@ -309,7 +309,7 @@ const App = () => {
               </h3>
               <p className="text-xs text-[#72767d] mt-1">{onlineUsers.length} online</p>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-black">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4 bg-black">
               {messages.map(msg => (
                 <div key={msg.id} className="flex items-start gap-3">
                   <img src={msg.avatar} alt={msg.user} className="w-10 h-10 rounded-full border border-[#23272a]" />
