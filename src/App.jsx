@@ -1,7 +1,7 @@
 // Spotify OAuth config
 const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
 const SPOTIFY_REDIRECT_URI = "https://spotcord-1.onrender.com/callback";
-const SPOTIFY_SCOPES = "user-read-currently-playing user-read-playback-state user-read-private";
+const SPOTIFY_SCOPES = "streaming user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-private";
 
 function getSpotifyAuthUrl() {
   const params = new URLSearchParams({
@@ -18,6 +18,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { io } from 'socket.io-client';
 import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
+import WebPlayer from './WebPlayer';
 
 const App = () => {
   // Force Spotify login for all users
@@ -277,6 +278,12 @@ const App = () => {
               }}
             >Song</button>
           </div>
+          {/* Web Playback SDK player */}
+          {sessionStorage.getItem('spotify_code') && (
+            <div className="mt-4">
+              <WebPlayer code={sessionStorage.getItem('spotify_code')} />
+            </div>
+          )}
           <div className="flex items-center justify-center gap-1 bg-[#23272a] rounded-lg px-2 py-1 text-gray-300 text-xs shadow border border-[#36393f] w-full">
             <User className="w-4 h-4" />
             <span>{onlineUsers.length}</span>
