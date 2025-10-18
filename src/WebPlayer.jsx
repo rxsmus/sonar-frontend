@@ -10,6 +10,7 @@ export default function WebPlayer({ code, showUI = false }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPremium, setIsPremium] = useState(null);
   const [error, setError] = useState(null);
+  const [tokenScope, setTokenScope] = useState(null);
 
   // We'll load the Spotify SDK from inside the main effect so we can
   // register the global `onSpotifyWebPlaybackSDKReady` handler before the
@@ -27,6 +28,13 @@ export default function WebPlayer({ code, showUI = false }) {
           window.location.href = `${window.location.origin}${window.location.pathname}?code=`; // trigger redirect logic
         }
         throw new Error(data.error || 'Failed to fetch token');
+      }
+      // store scope for diagnostics
+      if (data.scope) setTokenScope(data.scope);
+      // warn if streaming scope is missing since the SDK requires it
+      if (data.scope && !data.scope.split(' ').includes('streaming')) {
+        console.warn('Access token missing streaming scope:', data.scope);
+        setError('Access token is missing the `streaming` scope. Re-authorize to enable in-browser playback.');
       }
       return data.access_token;
     } catch (e) {
@@ -80,11 +88,23 @@ export default function WebPlayer({ code, showUI = false }) {
         deviceRef.current = device_id;
         setReady(true);
         // Transfer playback to this device
-        fetch('https://api.spotify.com/v1/me/player', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ device_ids: [device_id], play: false }),
-        }).catch(() => {});
+        (async () => {
+          try {
+            const r = await fetch('https://api.spotify.com/v1/me/player', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ device_ids: [device_id], play: false }),
+            });
+            if (!r.ok) {
+              const text = await r.text().catch(() => '[no body]');
+              console.error('Failed to transfer playback to SDK device', r.status, text);
+              setError('Failed to transfer playback to the Web Playback SDK device. Check token scopes and that your account is Premium.');
+            }
+          } catch (err) {
+            console.error('Error transferring playback to device', err);
+            setError(err.message || String(err));
+          }
+        })();
       });
 
       player.addListener('not_ready', ({ device_id }) => {
