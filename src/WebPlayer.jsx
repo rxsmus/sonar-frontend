@@ -52,6 +52,7 @@ export default function WebPlayer({ code, showUI = false }) {
   useEffect(() => {
     if (!code) return;
     let mounted = true;
+    let readyTimeout = null;
 
     const onSpotifyWebPlaybackSDKReady = async () => {
       const token = await fetchAccessToken();
@@ -114,6 +115,12 @@ export default function WebPlayer({ code, showUI = false }) {
       });
 
       player.connect();
+      // If the player doesn't become ready within 12s, surface an error
+      readyTimeout = setTimeout(() => {
+        if (!deviceRef.current) {
+          setError('Web Playback SDK did not become ready — check that your app origin and redirect URI are registered in the Spotify Developer dashboard and that the account is Premium.');
+        }
+      }, 12000);
       // Expose controls to the window so parent UI can call them
       // Helper to play a specific Spotify URI on the current device
       const playUri = async (uri) => {
