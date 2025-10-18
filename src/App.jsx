@@ -386,7 +386,7 @@ const App = () => {
           </div>
         </section>
 
-        {/* Sidebar */}
+        {/* Sidebar (right column) */}
         <aside className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-6">
           <div className="bg-black rounded-2xl p-6 shadow-lg border border-[#36393f]">
             <h3 className="text-md font-semibold mb-4 flex items-center gap-2 text-[#b9bbbe]">
@@ -409,48 +409,49 @@ const App = () => {
                 );
               })}
             </div>
-            {/* Small player/search box */}
-            <div className="mt-4 bg-[#0b0b0c] border border-[#23272a] rounded-lg p-3">
-              <div className="flex items-center gap-2">
-                <input
-                  id="player-search"
-                  placeholder="Search Spotify and play..."
-                  className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
-                />
-                <button
-                  onClick={() => {
-                    const q = document.getElementById('player-search').value.trim();
-                    if (!q) return;
-                    window.SpotcordPlayerControls?.searchAndPlay?.(q);
-                  }}
-                  className="bg-[#5865f2] hover:bg-[#4752c4] text-white px-3 py-2 rounded"
-                >Play</button>
-              </div>
-                <div className="mt-3">
-                  <SearchResults />
-                </div>
+          </div>
+
+          {/* Separate Player card */}
+          <div className="bg-black rounded-2xl p-4 shadow-lg border border-[#36393f]">
+            <h3 className="text-md font-semibold mb-4 text-[#b9bbbe]">Player</h3>
+            <div className="flex items-center gap-2">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') performSearch(searchQuery); }}
+                placeholder="Search Spotify..."
+                className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
+              />
+              <button
+                onClick={() => performSearch(searchQuery)}
+                className="bg-[#5865f2] hover:bg-[#4752c4] text-white px-3 py-2 rounded"
+              >Search</button>
             </div>
-              <div className="mt-4 flex items-center justify-center gap-3">
-                <button
-                  onClick={() => window.SpotcordPlayerControls?.play?.()}
-                  title="Play"
-                  className="bg-[#43b581] hover:bg-[#369e67] p-2 rounded-lg"
-                  aria-label="Play"
-                >
-                  <Play className="w-4 h-4 text-white" />
-                </button>
-                <button
-                  onClick={() => window.SpotcordPlayerControls?.pause?.()}
-                  title="Pause"
-                  className="bg-[#5865f2] hover:bg-[#4752c4] p-2 rounded-lg"
-                  aria-label="Pause"
-                >
-                  <Pause className="w-4 h-4 text-white" />
-                </button>
-              </div>
-            <div className="hidden">
-              <WebPlayer code={sessionStorage.getItem('spotify_code')} showUI={false} />
+            <div className="mt-3">
+              <SearchResults />
             </div>
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <button
+                onClick={() => window.SpotcordPlayerControls?.play?.()}
+                title="Play"
+                className="bg-[#43b581] hover:bg-[#369e67] p-2 rounded-lg"
+                aria-label="Play"
+              >
+                <Play className="w-4 h-4 text-white" />
+              </button>
+              <button
+                onClick={() => window.SpotcordPlayerControls?.pause?.()}
+                title="Pause"
+                className="bg-[#5865f2] hover:bg-[#4752c4] p-2 rounded-lg"
+                aria-label="Pause"
+              >
+                <Pause className="w-4 h-4 text-white" />
+              </button>
+            </div>
+          </div>
+
+          <div className="hidden">
+            <WebPlayer code={sessionStorage.getItem('spotify_code')} showUI={false} />
           </div>
         </aside>
       </main>
