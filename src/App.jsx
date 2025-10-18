@@ -100,6 +100,56 @@ const App = () => {
   // Track artist for artist mode
   const [artist, setArtist] = useState(null);
 
+  // Search UI state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const searchInProgressRef = useRef(false);
+
+  const performSearch = async (q) => {
+    if (!q) return;
+    searchInProgressRef.current = true;
+    try {
+      const results = await window.SpotcordPlayerControls?.search?.(q) || [];
+      setSearchResults(results);
+    } catch (e) {
+      console.error('search failed', e);
+      setSearchResults([]);
+    } finally {
+      searchInProgressRef.current = false;
+    }
+  };
+
+  function SearchResults() {
+    return (
+      <div>
+        {searchResults.length === 0 ? (
+          <p className="text-xs text-[#72767d]">No results</p>
+        ) : (
+          <div className="flex flex-col gap-2 mt-2">
+            {searchResults.map(r => (
+              <button
+                key={r.id}
+                onClick={() => {
+                  window.SpotcordPlayerControls?.playUri?.(r.uri);
+                  // clear results
+                  setSearchResults([]);
+                  setSearchQuery('');
+                }}
+                className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded"
+              >
+                {r.album_image ? <img src={r.album_image} alt={r.album} className="w-10 h-10 rounded" /> : <div className="w-10 h-10 bg-[#23272a] rounded" />}
+                <div className="text-left">
+                  <div className="text-sm text-white">{r.name}</div>
+                  <div className="text-xs text-[#72767d]">{r.artists} · {r.album}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // Fetch from Flask backend and set songId/artist
   useEffect(() => {
     // replace polling with SDK event listener
@@ -376,7 +426,11 @@ const App = () => {
                   className="bg-[#5865f2] hover:bg-[#4752c4] text-white px-3 py-2 rounded"
                 >Play</button>
               </div>
-              <div className="mt-3 flex items-center justify-center gap-3">
+                <div className="mt-3">
+                  <SearchResults />
+                </div>
+            </div>
+              <div className="mt-4 flex items-center justify-center gap-3">
                 <button
                   onClick={() => window.SpotcordPlayerControls?.play?.()}
                   title="Play"
@@ -394,25 +448,6 @@ const App = () => {
                   <Pause className="w-4 h-4 text-white" />
                 </button>
               </div>
-            </div>
-            <div className="mt-4 flex items-center justify-center gap-3">
-              <button
-                onClick={() => window.SpotcordPlayerControls?.play?.()}
-                title="Play"
-                className="bg-[#43b581] hover:bg-[#369e67] p-2 rounded-lg"
-                aria-label="Play"
-              >
-                <Play className="w-4 h-4 text-white" />
-              </button>
-              <button
-                onClick={() => window.SpotcordPlayerControls?.pause?.()}
-                title="Pause"
-                className="bg-[#5865f2] hover:bg-[#4752c4] p-2 rounded-lg"
-                aria-label="Pause"
-              >
-                <Pause className="w-4 h-4 text-white" />
-              </button>
-            </div>
             <div className="hidden">
               <WebPlayer code={sessionStorage.getItem('spotify_code')} showUI={false} />
             </div>

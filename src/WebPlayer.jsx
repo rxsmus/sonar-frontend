@@ -4,6 +4,7 @@ const BACKEND_BASE = 'https://spotcord-1.onrender.com';
 
 export default function WebPlayer({ code, showUI = false }) {
   const playerRef = useRef(null);
+  const deviceRef = useRef(null);
   const [deviceId, setDeviceId] = useState(null);
   const [ready, setReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -74,6 +75,7 @@ export default function WebPlayer({ code, showUI = false }) {
 
       player.addListener('ready', ({ device_id }) => {
         setDeviceId(device_id);
+        deviceRef.current = device_id;
         setReady(true);
         // Transfer playback to this device
         fetch('https://api.spotify.com/v1/me/player', {
@@ -148,6 +150,32 @@ export default function WebPlayer({ code, showUI = false }) {
         }
       };
 
+      // Search and return track results (useful for showing a results list in the UI)
+      const search = async (query) => {
+        try {
+          const token = await fetchAccessToken();
+          const q = encodeURIComponent(query);
+          const r = await fetch(`https://api.spotify.com/v1/search?q=${q}&type=track&limit=8`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!r.ok) throw new Error('Search failed');
+          const d = await r.json();
+          const items = (d.tracks && d.tracks.items) || [];
+          return items.map(t => ({
+            id: t.id,
+            name: t.name,
+            artists: t.artists.map(a => a.name).join(', '),
+            album: t.album && t.album.name,
+            album_image: t.album && t.album.images && t.album.images[0] ? t.album.images[0].url : null,
+            uri: t.uri,
+          }));
+        } catch (e) {
+          console.error('search error', e);
+          setError(e.message);
+          return [];
+        }
+      };
+
       // Keep a ref to device id because device_id variable is scoped in the event listener
       const deviceRef = { current: device_id };
 
@@ -210,6 +238,7 @@ export default function WebPlayer({ code, showUI = false }) {
         },
         playUri,
         searchAndPlay,
+        search,
       };
     };
 
