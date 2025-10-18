@@ -278,12 +278,7 @@ const App = () => {
               }}
             >Song</button>
           </div>
-          {/* Web Playback SDK player */}
-          {sessionStorage.getItem('spotify_code') && (
-            <div className="mt-4">
-              <WebPlayer code={sessionStorage.getItem('spotify_code')} />
-            </div>
-          )}
+          {/* Web Playback SDK player moved to bottom fixed bar */}
           <div className="flex items-center justify-center gap-1 bg-[#23272a] rounded-lg px-2 py-1 text-gray-300 text-xs shadow border border-[#36393f] w-full">
             <User className="w-4 h-4" />
             <span>{onlineUsers.length}</span>
@@ -429,8 +424,24 @@ const App = () => {
         </aside>
       </main>
       <Analytics />
+      <div>
+        <WebPlayer code={sessionStorage.getItem('spotify_code')} />
+      </div>
   </div>
   );
 };
 
 export default App;
+
+// Fixed bottom player bar
+export function BottomPlayer() {
+  const code = sessionStorage.getItem('spotify_code');
+  if (!code) return null;
+  return (
+    <div className="fixed left-28 right-0 bottom-4 p-4">
+      <div className="bg-[#111213] rounded-lg border border-[#23272a] p-3">
+        <WebPlayer code={code} />
+      </div>
+    </div>
+  );
+}
