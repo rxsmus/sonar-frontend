@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 const BACKEND_BASE = 'https://spotcord-1.onrender.com';
 
-export default function WebPlayer({ code }) {
+export default function WebPlayer({ code, showUI = false }) {
   const playerRef = useRef(null);
   const [deviceId, setDeviceId] = useState(null);
   const [ready, setReady] = useState(false);
@@ -91,6 +91,23 @@ export default function WebPlayer({ code }) {
       player.addListener('player_state_changed', (state) => {
         if (!state) return;
         setIsPlaying(!state.paused);
+        try {
+          const track = state.track_window && state.track_window.current_track;
+          const detail = {
+            isPlaying: !state.paused,
+            position: state.position,
+            duration: state.duration,
+            track_id: track ? track.id : null,
+            track_name: track ? track.name : null,
+            artists: track ? track.artists.map(a => a.name).join(', ') : null,
+            album_name: track && track.album ? track.album.name : null,
+            album_image_url: track && track.album && track.album.images && track.album.images[0] ? track.album.images[0].url : null,
+          };
+          // Broadcast SDK state to the app
+          window.dispatchEvent(new CustomEvent('spotcord_player_state', { detail }));
+        } catch (e) {
+          console.warn('Error processing player_state_changed', e);
+        }
       });
 
       player.connect();
@@ -179,6 +196,9 @@ export default function WebPlayer({ code }) {
   };
 
   if (!code) return null;
+
+  // If developer wants UI, render minimal status + button; otherwise no UI (we dispatch events)
+  if (!showUI) return null;
 
   return (
     <div className="mt-4">

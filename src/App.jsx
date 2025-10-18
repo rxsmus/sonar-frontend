@@ -102,74 +102,30 @@ const App = () => {
 
   // Fetch from Flask backend and set songId/artist
   useEffect(() => {
-    const fetchNowPlaying = async () => {
-      try {
-        setError(null);
-        const code = sessionStorage.getItem('spotify_code');
-        if (!code) {
-          setError('No Spotify code found. Please log in.');
-          setCurrentSong(null);
-          setSongId(null);
-          setSpotifyUser(null);
-          setSpotifyUserDebug(null);
-          return;
-        }
-        // Always send code with every request
-        const listeningUrl = `https://spotcord-1.onrender.com/listening?code=${encodeURIComponent(code)}`;
-        const response = await fetch(listeningUrl, { credentials: 'include' });
-        const data = await response.json();
-        if (response.status === 401 || data.error) {
-          setError(data.error || 'Not authenticated');
-          setCurrentSong(null);
-          setSongId(null);
-          setSpotifyUser(null);
-          setSpotifyUserDebug(null);
-          return;
-        }
-        if (data.is_playing && data.track_id) {
-          setCurrentSong({
-            title: data.track_name,
-            artist: data.artists,
-            album: data.album_name,
-            duration: data.duration,
-            progress: data.progress,
-            albumArt: data.album_image_url,
-            isPlaying: true,
-          });
-          setSongId(data.track_id);
-          // Use first artist for artist mode
-          if (data.artists) {
-            setArtist(data.artists.split(',')[0].trim());
-          } else {
-            setArtist(null);
-          }
-        } else {
-          setCurrentSong(null);
-          setSongId(null);
-          setArtist(null);
-        }
-        // Always fetch Spotify user profile for this code
-        try {
-          const userResp = await fetch(`https://spotcord-1.onrender.com/spotify_user?code=${encodeURIComponent(code)}`);
-          const userData = await userResp.json();
-          setSpotifyUser(userData.display_name || userData.id || null);
-          setSpotifyUserDebug(JSON.stringify(userData));
-        } catch (e) {
-          setSpotifyUser(null);
-          setSpotifyUserDebug('Error: ' + e.message);
-        }
-      } catch (err) {
+    // replace polling with SDK event listener
+    const handleState = (e) => {
+      const data = e.detail;
+      if (!data || !data.track_id) {
         setCurrentSong(null);
         setSongId(null);
-        setSpotifyUser(null);
-        setSpotifyUserDebug(null);
-        setError('Network or server error');
-        console.error("Error fetching track:", err);
+        setArtist(null);
+        return;
       }
+      setCurrentSong({
+        title: data.track_name,
+        artist: data.artists,
+        album: data.album_name,
+        duration: data.duration,
+        progress: data.position,
+        albumArt: data.album_image_url,
+        isPlaying: data.isPlaying,
+      });
+      setSongId(data.track_id);
+      if (data.artists) setArtist(data.artists.split(',')[0].trim());
     };
-    fetchNowPlaying();
-    const interval = setInterval(fetchNowPlaying, 5000); // update every 1s
-    return () => clearInterval(interval);
+
+    window.addEventListener('spotcord_player_state', handleState);
+    return () => window.removeEventListener('spotcord_player_state', handleState);
   }, []);
 
 
@@ -403,12 +359,31 @@ const App = () => {
                 );
               })}
             </div>
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <button
+                onClick={() => window.SpotcordPlayerControls?.play?.()}
+                title="Play"
+                className="bg-[#43b581] hover:bg-[#369e67] p-2 rounded-lg"
+                aria-label="Play"
+              >
+                <Play className="w-4 h-4 text-white" />
+              </button>
+              <button
+                onClick={() => window.SpotcordPlayerControls?.pause?.()}
+                title="Pause"
+                className="bg-[#5865f2] hover:bg-[#4752c4] p-2 rounded-lg"
+                aria-label="Pause"
+              >
+                <Pause className="w-4 h-4 text-white" />
+              </button>
+            </div>
+            <div className="hidden">
+              <WebPlayer code={sessionStorage.getItem('spotify_code')} showUI={false} />
+            </div>
           </div>
         </aside>
       </main>
       <Analytics />
-      {/* Bottom fixed player */}
-      <BottomPlayer />
   </div>
   );
 };
