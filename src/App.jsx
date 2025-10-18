@@ -359,6 +359,42 @@ const App = () => {
                 );
               })}
             </div>
+            {/* Small player/search box */}
+            <div className="mt-4 bg-[#0b0b0c] border border-[#23272a] rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <input
+                  id="player-search"
+                  placeholder="Search Spotify and play..."
+                  className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
+                />
+                <button
+                  onClick={() => {
+                    const q = document.getElementById('player-search').value.trim();
+                    if (!q) return;
+                    window.SpotcordPlayerControls?.searchAndPlay?.(q);
+                  }}
+                  className="bg-[#5865f2] hover:bg-[#4752c4] text-white px-3 py-2 rounded"
+                >Play</button>
+              </div>
+              <div className="mt-3 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => window.SpotcordPlayerControls?.play?.()}
+                  title="Play"
+                  className="bg-[#43b581] hover:bg-[#369e67] p-2 rounded-lg"
+                  aria-label="Play"
+                >
+                  <Play className="w-4 h-4 text-white" />
+                </button>
+                <button
+                  onClick={() => window.SpotcordPlayerControls?.pause?.()}
+                  title="Pause"
+                  className="bg-[#5865f2] hover:bg-[#4752c4] p-2 rounded-lg"
+                  aria-label="Pause"
+                >
+                  <Pause className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            </div>
             <div className="mt-4 flex items-center justify-center gap-3">
               <button
                 onClick={() => window.SpotcordPlayerControls?.play?.()}

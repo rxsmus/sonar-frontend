@@ -112,11 +112,52 @@ export default function WebPlayer({ code, showUI = false }) {
 
       player.connect();
       // Expose controls to the window so parent UI can call them
+      // Helper to play a specific Spotify URI on the current device
+      const playUri = async (uri) => {
+        try {
+          const token = await fetchAccessToken();
+          const id = deviceRef.current || device_id;
+          if (!id) throw new Error('No device id');
+          await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${id}`, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uris: [uri] }),
+          });
+        } catch (e) {
+          console.error('playUri error', e);
+          setError(e.message);
+        }
+      };
+
+      // Helper to search Spotify and play the first track from the results
+      const searchAndPlay = async (query) => {
+        try {
+          const token = await fetchAccessToken();
+          const q = encodeURIComponent(query);
+          const r = await fetch(`https://api.spotify.com/v1/search?q=${q}&type=track&limit=5`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!r.ok) throw new Error('Search failed');
+          const d = await r.json();
+          const track = d.tracks && d.tracks.items && d.tracks.items[0];
+          if (!track) throw new Error('No track found');
+          await playUri(track.uri);
+        } catch (e) {
+          console.error('searchAndPlay error', e);
+          setError(e.message);
+        }
+      };
+
+      // Keep a ref to device id because device_id variable is scoped in the event listener
+      const deviceRef = { current: device_id };
+
       window.SpotcordPlayerControls = {
         play: async () => {
           try {
             const token = await fetchAccessToken();
-            await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${device_id}`, {
+            const id = deviceRef.current || device_id;
+            if (!id) throw new Error('No device id');
+            await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${id}`, {
               method: 'PUT',
               headers: { Authorization: `Bearer ${token}` },
             });
@@ -128,7 +169,9 @@ export default function WebPlayer({ code, showUI = false }) {
         pause: async () => {
           try {
             const token = await fetchAccessToken();
-            await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${device_id}`, {
+            const id = deviceRef.current || device_id;
+            if (!id) throw new Error('No device id');
+            await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${id}`, {
               method: 'PUT',
               headers: { Authorization: `Bearer ${token}` },
             });
@@ -140,7 +183,9 @@ export default function WebPlayer({ code, showUI = false }) {
         next: async () => {
           try {
             const token = await fetchAccessToken();
-            await fetch(`https://api.spotify.com/v1/me/player/next?device_id=${device_id}`, {
+            const id = deviceRef.current || device_id;
+            if (!id) throw new Error('No device id');
+            await fetch(`https://api.spotify.com/v1/me/player/next?device_id=${id}`, {
               method: 'POST',
               headers: { Authorization: `Bearer ${token}` },
             });
@@ -152,7 +197,9 @@ export default function WebPlayer({ code, showUI = false }) {
         previous: async () => {
           try {
             const token = await fetchAccessToken();
-            await fetch(`https://api.spotify.com/v1/me/player/previous?device_id=${device_id}`, {
+            const id = deviceRef.current || device_id;
+            if (!id) throw new Error('No device id');
+            await fetch(`https://api.spotify.com/v1/me/player/previous?device_id=${id}`, {
               method: 'POST',
               headers: { Authorization: `Bearer ${token}` },
             });
@@ -160,7 +207,9 @@ export default function WebPlayer({ code, showUI = false }) {
             console.error('previous error', e);
             setError(e.message);
           }
-        }
+        },
+        playUri,
+        searchAndPlay,
       };
     };
 
