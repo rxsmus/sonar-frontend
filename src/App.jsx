@@ -331,6 +331,24 @@ const App = () => {
                   <h3 className="text-2xl font-bold mb-1 text-white">{currentSong.title}</h3>
                   <p className="text-lg text-[#b9bbbe] mb-1">{currentSong.artist}</p>
                   <p className="text-md text-[#72767d] mb-4">{currentSong.album}</p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <button
+                      onClick={() => window.SpotcordPlayerControls?.previous()}
+                      className="bg-[#2c2f33] text-white px-3 py-1 rounded"
+                    >Prev</button>
+                    <button
+                      onClick={() => window.SpotcordPlayerControls?.play()}
+                      className="bg-[#5865f2] text-white px-3 py-1 rounded"
+                    >Play</button>
+                    <button
+                      onClick={() => window.SpotcordPlayerControls?.pause()}
+                      className="bg-[#2c2f33] text-white px-3 py-1 rounded"
+                    >Pause</button>
+                    <button
+                      onClick={() => window.SpotcordPlayerControls?.next()}
+                      className="bg-[#2c2f33] text-white px-3 py-1 rounded"
+                    >Next</button>
+                  </div>
                 </div>
               </div>
             )}

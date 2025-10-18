@@ -94,6 +94,57 @@ export default function WebPlayer({ code }) {
       });
 
       player.connect();
+      // Expose controls to the window so parent UI can call them
+      window.SpotcordPlayerControls = {
+        play: async () => {
+          try {
+            const token = await fetchAccessToken();
+            await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${device_id}`, {
+              method: 'PUT',
+              headers: { Authorization: `Bearer ${token}` },
+            });
+          } catch (e) {
+            console.error('play error', e);
+            setError(e.message);
+          }
+        },
+        pause: async () => {
+          try {
+            const token = await fetchAccessToken();
+            await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${device_id}`, {
+              method: 'PUT',
+              headers: { Authorization: `Bearer ${token}` },
+            });
+          } catch (e) {
+            console.error('pause error', e);
+            setError(e.message);
+          }
+        },
+        next: async () => {
+          try {
+            const token = await fetchAccessToken();
+            await fetch(`https://api.spotify.com/v1/me/player/next?device_id=${device_id}`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}` },
+            });
+          } catch (e) {
+            console.error('next error', e);
+            setError(e.message);
+          }
+        },
+        previous: async () => {
+          try {
+            const token = await fetchAccessToken();
+            await fetch(`https://api.spotify.com/v1/me/player/previous?device_id=${device_id}`, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}` },
+            });
+          } catch (e) {
+            console.error('previous error', e);
+            setError(e.message);
+          }
+        }
+      };
     };
 
     // Wait for SDK global to be ready
