@@ -11,22 +11,23 @@ export default function WebPlayer({ code, showUI = false }) {
   const [isPremium, setIsPremium] = useState(null);
   const [error, setError] = useState(null);
 
-  // Load Spotify SDK
-  useEffect(() => {
-    if (window.Spotify) return;
-    const script = document.createElement('script');
-    script.src = 'https://sdk.scdn.co/spotify-player.js';
-    script.async = true;
-    document.body.appendChild(script);
-    return () => document.body.removeChild(script);
-  }, []);
+  // We'll load the Spotify SDK from inside the main effect so we can
+  // register the global `onSpotifyWebPlaybackSDKReady` handler before the
+  // script executes (avoids race where the SDK expects the handler to exist).
 
   // Helper to get a fresh token from backend
   const fetchAccessToken = async () => {
     try {
       const resp = await fetch(`${BACKEND_BASE}/refresh?code=${encodeURIComponent(code)}`);
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Failed to fetch token');
+      if (!resp.ok) {
+        // If the backend reports unauthorized for this code, force a re-login
+        if (resp.status === 401) {
+          sessionStorage.clear();
+          window.location.href = `${window.location.origin}${window.location.pathname}?code=`; // trigger redirect logic
+        }
+        throw new Error(data.error || 'Failed to fetch token');
+      }
       return data.access_token;
     } catch (e) {
       setError(e.message);
@@ -118,7 +119,7 @@ export default function WebPlayer({ code, showUI = false }) {
       const playUri = async (uri) => {
         try {
           const token = await fetchAccessToken();
-          const id = deviceRef.current || device_id;
+          const id = deviceRef.current || deviceId;
           if (!id) throw new Error('No device id');
           await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${id}`, {
             method: 'PUT',
@@ -176,14 +177,13 @@ export default function WebPlayer({ code, showUI = false }) {
         }
       };
 
-      // Keep a ref to device id because device_id variable is scoped in the event listener
-      const deviceRef = { current: device_id };
-
+      // window.deviceRef is already a useRef defined above; ensure it's set by
+      // the ready listener. Expose control functions using that ref.
       window.SpotcordPlayerControls = {
         play: async () => {
           try {
             const token = await fetchAccessToken();
-            const id = deviceRef.current || device_id;
+            const id = deviceRef.current || deviceId;
             if (!id) throw new Error('No device id');
             await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${id}`, {
               method: 'PUT',
@@ -197,7 +197,7 @@ export default function WebPlayer({ code, showUI = false }) {
         pause: async () => {
           try {
             const token = await fetchAccessToken();
-            const id = deviceRef.current || device_id;
+            const id = deviceRef.current || deviceId;
             if (!id) throw new Error('No device id');
             await fetch(`https://api.spotify.com/v1/me/player/pause?device_id=${id}`, {
               method: 'PUT',
@@ -211,7 +211,7 @@ export default function WebPlayer({ code, showUI = false }) {
         next: async () => {
           try {
             const token = await fetchAccessToken();
-            const id = deviceRef.current || device_id;
+            const id = deviceRef.current || deviceId;
             if (!id) throw new Error('No device id');
             await fetch(`https://api.spotify.com/v1/me/player/next?device_id=${id}`, {
               method: 'POST',
@@ -225,7 +225,7 @@ export default function WebPlayer({ code, showUI = false }) {
         previous: async () => {
           try {
             const token = await fetchAccessToken();
-            const id = deviceRef.current || device_id;
+            const id = deviceRef.current || deviceId;
             if (!id) throw new Error('No device id');
             await fetch(`https://api.spotify.com/v1/me/player/previous?device_id=${id}`, {
               method: 'POST',
@@ -242,9 +242,21 @@ export default function WebPlayer({ code, showUI = false }) {
       };
     };
 
-    // Wait for SDK global to be ready
-    if (window.Spotify) onSpotifyWebPlaybackSDKReady();
-    else window.onSpotifyWebPlaybackSDKReady = onSpotifyWebPlaybackSDKReady;
+    // Wait for SDK global to be ready. Register the global handler BEFORE
+    // appending the script so the SDK can call it immediately when it runs.
+    window.onSpotifyWebPlaybackSDKReady = onSpotifyWebPlaybackSDKReady;
+    if (window.Spotify) {
+      // SDK already present (dev/live reload), call handler now
+      onSpotifyWebPlaybackSDKReady();
+    } else {
+      // Append the SDK script (only once)
+      if (!document.querySelector('script[src="https://sdk.scdn.co/spotify-player.js"]')) {
+        const script = document.createElement('script');
+        script.src = 'https://sdk.scdn.co/spotify-player.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }
+    }
 
     return () => {
       mounted = false;

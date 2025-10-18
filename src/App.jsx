@@ -119,6 +119,14 @@ const App = () => {
       const tokenData = await tokenResp.json();
       if (!tokenResp.ok || !tokenData.access_token) {
         console.warn('failed to get access token for search', tokenData);
+        // If the backend says no token cached, force a re-login by clearing
+        // sessionStorage and reloading the page so the app sends the user to
+        // Spotify auth (the app's useEffect will redirect).
+        if (tokenResp.status === 401) {
+          sessionStorage.clear();
+          window.location.href = getSpotifyAuthUrl();
+          return;
+        }
         setSearchResults([]);
         return;
       }
