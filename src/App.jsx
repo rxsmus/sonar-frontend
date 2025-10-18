@@ -17,7 +17,7 @@ function getSpotifyAuthUrl() {
 import React, { useState, useEffect, useRef } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { io } from 'socket.io-client';
-import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-react';
+import { MessageCircle, Music, User, Send, Heart, Play, Pause, Search as SearchIcon } from 'lucide-react';
 import WebPlayer from './WebPlayer';
 
 const App = () => {
@@ -163,6 +163,19 @@ const App = () => {
       searchInProgressRef.current = false;
     }
   };
+
+  // Close search results when clicking outside the search container
+  useEffect(() => {
+    const onDocClick = (e) => {
+      const container = document.querySelector('.spotcord-search-container');
+      if (!container) return;
+      if (!container.contains(e.target)) {
+        setSearchResults([]);
+      }
+    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, []);
 
   function SearchResults() {
     return (
@@ -377,6 +390,15 @@ const App = () => {
                   <h3 className="text-2xl font-bold mb-1 text-white">{currentSong.title}</h3>
                   <p className="text-lg text-[#b9bbbe] mb-1">{currentSong.artist}</p>
                   <p className="text-md text-[#72767d] mb-4">{currentSong.album}</p>
+                  {/* Minimal song progress bar */}
+                  {currentSong && currentSong.duration > 0 && (
+                    <div className="w-full bg-[#1f2123] rounded h-2 mt-2 overflow-hidden">
+                      <div
+                        className="h-2 bg-[#5865f2]"
+                        style={{ width: `${Math.min(100, Math.max(0, ((currentSong.progress || 0) / currentSong.duration) * 100))}%` }}
+                      />
+                    </div>
+                  )}
                   {/* Player controls moved to bottom bar */}
                 </div>
               </div>
@@ -459,7 +481,7 @@ const App = () => {
           {/* Separate Player card */}
           <div className="bg-black rounded-2xl p-4 shadow-lg border border-[#36393f]">
             <h3 className="text-md font-semibold mb-4 text-[#b9bbbe]">Player</h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 spotcord-search-container">
               <input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -468,11 +490,14 @@ const App = () => {
                 className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
               />
               <button
-                onClick={() => performSearch(searchQuery)}
-                className="bg-[#5865f2] hover:bg-[#4752c4] text-white px-3 py-2 rounded"
-              >Search</button>
+                onClick={(e) => { e.stopPropagation(); performSearch(searchQuery); }}
+                className="bg-[#5865f2] hover:bg-[#4752c4] text-white p-2 rounded"
+                aria-label="Search"
+              >
+                <SearchIcon className="w-4 h-4" />
+              </button>
             </div>
-            <div className="mt-3">
+            <div className="mt-3 spotcord-search-container">
               <SearchResults />
             </div>
             <div className="mt-4 flex items-center justify-center gap-3">
