@@ -209,6 +209,24 @@ export default function WebPlayer({ code, showUI = false }) {
       window.SpotcordPlayerControls = {
         play: async () => {
           try {
+            // Prefer to use the SDK player directly when available
+            if (playerRef.current && typeof playerRef.current.getCurrentState === 'function') {
+              try {
+                const state = await playerRef.current.getCurrentState();
+                // If we have state and it's paused, togglePlay to resume
+                if (state && state.paused) {
+                  if (typeof playerRef.current.togglePlay === 'function') {
+                    await playerRef.current.togglePlay();
+                    return;
+                  }
+                }
+              } catch (err) {
+                // ignore and fallback to API
+                console.warn('SDK play fallback, getCurrentState error', err);
+              }
+            }
+
+            // Fallback to Web API play endpoint
             const token = await fetchAccessToken();
             const id = deviceRef.current || deviceId;
             if (!id) throw new Error('No device id');
@@ -223,6 +241,24 @@ export default function WebPlayer({ code, showUI = false }) {
         },
         pause: async () => {
           try {
+            // Prefer to use the SDK player directly when available
+            if (playerRef.current && typeof playerRef.current.getCurrentState === 'function') {
+              try {
+                const state = await playerRef.current.getCurrentState();
+                // If we have state and it's playing, togglePlay to pause
+                if (state && !state.paused) {
+                  if (typeof playerRef.current.togglePlay === 'function') {
+                    await playerRef.current.togglePlay();
+                    return;
+                  }
+                }
+              } catch (err) {
+                // ignore and fallback to API
+                console.warn('SDK pause fallback, getCurrentState error', err);
+              }
+            }
+
+            // Fallback to Web API pause endpoint
             const token = await fetchAccessToken();
             const id = deviceRef.current || deviceId;
             if (!id) throw new Error('No device id');
