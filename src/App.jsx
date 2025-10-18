@@ -21,6 +21,7 @@ import { MessageCircle, Music, User, Send, Heart, Play, Pause } from 'lucide-rea
 import WebPlayer from './WebPlayer';
 
 const App = () => {
+  const BACKEND_BASE = 'https://spotcord-1.onrender.com';
   // Force Spotify login for all users
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -109,8 +110,44 @@ const App = () => {
     if (!q) return;
     searchInProgressRef.current = true;
     try {
-      const results = await window.SpotcordPlayerControls?.search?.(q) || [];
-      setSearchResults(results);
+      const code = sessionStorage.getItem('spotify_code');
+      if (!code) {
+        setSearchResults([]);
+        return;
+      }
+      const tokenResp = await fetch(`${BACKEND_BASE}/refresh?code=${encodeURIComponent(code)}`);
+      const tokenData = await tokenResp.json();
+      if (!tokenResp.ok || !tokenData.access_token) {
+        console.warn('failed to get access token for search', tokenData);
+        setSearchResults([]);
+        return;
+      }
+      const token = tokenData.access_token;
+      const qEnc = encodeURIComponent(q);
+      const r = await fetch(`https://api.spotify.com/v1/search?q=${qEnc}&type=track&limit=8`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) {
+        console.warn('spotify search failed', await r.text());
+        setSearchResults([]);
+        return;
+      }
+      const d = await r.json();
+      const items = (d.tracks && d.tracks.items) || [];
+      const mapped = items.map(track => {
+        const smallestAlbumImage = track.album.images.reduce((smallest, image) => {
+          if (!smallest || image.height < smallest.height) return image;
+          return smallest;
+        }, track.album.images[0]);
+        return {
+          id: track.id,
+          title: track.name,
+          artist: track.artists && track.artists[0] && track.artists[0].name,
+          uri: track.uri,
+          albumUrl: smallestAlbumImage ? smallestAlbumImage.url : null,
+        };
+      });
+      setSearchResults(mapped);
     } catch (e) {
       console.error('search failed', e);
       setSearchResults([]);
@@ -127,7 +164,7 @@ const App = () => {
         ) : (
           <div className="flex flex-col gap-2 mt-2">
             {searchResults.map(r => (
-              <button
+              <div
                 key={r.id}
                 onClick={() => {
                   window.SpotcordPlayerControls?.playUri?.(r.uri);
@@ -135,14 +172,14 @@ const App = () => {
                   setSearchResults([]);
                   setSearchQuery('');
                 }}
-                className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded"
+                className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded cursor-pointer"
               >
-                {r.album_image ? <img src={r.album_image} alt={r.album} className="w-10 h-10 rounded" /> : <div className="w-10 h-10 bg-[#23272a] rounded" />}
+                {r.albumUrl ? <img src={r.albumUrl} alt={r.title} className="w-10 h-10 rounded" /> : <div className="w-10 h-10 bg-[#23272a] rounded" />}
                 <div className="text-left">
-                  <div className="text-sm text-white">{r.name}</div>
-                  <div className="text-xs text-[#72767d]">{r.artists} · {r.album}</div>
+                  <div className="text-sm text-white">{r.title}</div>
+                  <div className="text-xs text-[#72767d]">{r.artist}</div>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
