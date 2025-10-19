@@ -34,6 +34,7 @@ const App = () => {
     }
   }, []);
   const [currentSong, setCurrentSong] = useState(null);
+  const [currentProgress, setCurrentProgress] = useState(0);
   // Mode: 'song' or 'artist'
   const [mode, setMode] = useState(() => sessionStorage.getItem('lobby_mode') || 'song');
   const [spotifyUser, setSpotifyUser] = useState(null);
@@ -222,25 +223,37 @@ const App = () => {
   // Fetch from Flask backend and set songId/artist
   useEffect(() => {
     // replace polling with SDK event listener
+    const lastTrackIdRef = { current: null };
     const handleState = (e) => {
       const data = e.detail;
       if (!data || !data.track_id) {
+        lastTrackIdRef.current = null;
         setCurrentSong(null);
         setSongId(null);
         setArtist(null);
+        setCurrentProgress(0);
         return;
       }
-      setCurrentSong({
-        title: data.track_name,
-        artist: data.artists,
-        album: data.album_name,
-        duration: data.duration,
-        progress: data.position,
-        albumArt: data.album_image_url,
-        isPlaying: data.isPlaying,
-      });
-      setSongId(data.track_id);
-      if (data.artists) setArtist(data.artists.split(',')[0].trim());
+
+      // If the track changed, update the full currentSong (album, art, etc.).
+      // If it's the same track, only update the progress to avoid reflow.
+      if (lastTrackIdRef.current !== data.track_id) {
+        lastTrackIdRef.current = data.track_id;
+        setCurrentSong({
+          title: data.track_name,
+          artist: data.artists,
+          album: data.album_name,
+          duration: data.duration,
+          albumArt: data.album_image_url,
+          isPlaying: data.isPlaying,
+        });
+        setSongId(data.track_id);
+        if (data.artists) setArtist(data.artists.split(',')[0].trim());
+        setCurrentProgress(data.position || 0);
+      } else {
+        // Only update progress for the currently playing track
+        setCurrentProgress(data.position || 0);
+      }
     };
 
     window.addEventListener('spotcord_player_state', handleState);
@@ -406,7 +419,7 @@ const App = () => {
                     <div className="w-full bg-[#1f2123] rounded h-1 mt-2 overflow-hidden">
                       <div
                         className="h-1 bg-[#5865f2]"
-                        style={{ width: `${Math.min(100, Math.max(0, ((currentSong.progress || 0) / currentSong.duration) * 100))}%` }}
+                        style={{ width: `${Math.min(100, Math.max(0, ((currentProgress || 0) / currentSong.duration) * 100))}%` }}
                       />
                     </div>
                   )}
