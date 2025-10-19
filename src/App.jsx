@@ -165,12 +165,12 @@ const App = () => {
     }
   };
 
-  // Close search results when clicking outside the search container, but only
-  // attach the listener while results are open to avoid accidental closures.
+  // Close search results when clicking outside the search container
+  const searchContainerRef = useRef(null);
+  // Close search results when clicking outside the search container (use ref)
   useEffect(() => {
-    if (!searchResults || searchResults.length === 0) return;
     const onDocClick = (e) => {
-      const container = document.querySelector('.spotcord-search-container');
+      const container = searchContainerRef.current;
       if (!container) return;
       if (!container.contains(e.target)) {
         setSearchResults([]);
@@ -178,24 +178,12 @@ const App = () => {
     };
     document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
-  }, [searchResults]);
+  }, []);
 
   function SearchResults() {
-    const listRef = useRef(null);
-    const savedPosRef = useRef(0);
-
-    useEffect(() => {
-      // restore scroll when results change (prevents jump to top on rerender)
-      if (listRef.current) {
-        try {
-          listRef.current.scrollTop = savedPosRef.current;
-        } catch (e) {}
-      }
-    }, [searchResults]);
-
     if (searchResults.length === 0) return null;
     return (
-      <div ref={listRef} onScroll={(e) => { savedPosRef.current = e.target.scrollTop; }} className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto pr-1">
+      <div className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto pr-1">
         {searchResults.map(r => (
           <div
             key={r.id}
@@ -490,25 +478,26 @@ const App = () => {
 
           {/* Separate Player card */}
           <div className="bg-black rounded-2xl p-4 shadow-lg border border-[#36393f]">
-            <h3 className="text-md font-semibold mb-4 text-[#b9bbbe]">Player</h3>
-            <div className="flex items-center gap-2 spotcord-search-container">
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') performSearch(searchQuery); }}
-                placeholder="Search Spotify..."
-                className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
-              />
-              <button
-                onClick={(e) => { e.stopPropagation(); performSearch(searchQuery); }}
-                className="bg-[#5865f2] hover:bg-[#4752c4] text-white p-2 rounded"
-                aria-label="Search"
-              >
-                <SearchIcon className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="mt-3 spotcord-search-container">
-              <SearchResults />
+            <div ref={searchContainerRef}>
+              <div className="flex items-center gap-2">
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') performSearch(searchQuery); }}
+                  placeholder="Search Spotify..."
+                  className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
+                />
+                <button
+                  onClick={(e) => { e.stopPropagation(); performSearch(searchQuery); }}
+                  className="bg-[#5865f2] hover:bg-[#4752c4] text-white p-2 rounded"
+                  aria-label="Search"
+                >
+                  <SearchIcon className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="mt-3">
+                <SearchResults />
+              </div>
             </div>
             <div className="mt-4 flex items-center justify-center gap-3">
               <button
