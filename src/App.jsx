@@ -240,7 +240,7 @@ const App = () => {
     <div className="flex-1 flex items-center justify-center">
       <div className="max-w-xl text-center">
   <h1 className="text-4xl font-bold mb-4">sonar</h1>
-        <p className="text-lg text-[#b9bbbe] mb-6">Connect your account to play music in-browser and match with other users listening to the same song or artist.</p>
+        <p className="text-lg text-[#b9bbbe] mb-6">Connect your account to play music in-browser and match with other users listening to the same song.</p>
         <div className="flex flex-col items-center gap-3">
           <button
             onClick={() => { window.location.href = getSpotifyAuthUrl(); }}
