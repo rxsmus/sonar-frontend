@@ -166,26 +166,17 @@ const App = () => {
     }
   };
 
-  // Close search results when clicking outside the search container.
-  // Use pointerdown + bounding rect check so clicks on the scrollbar (which
-  // may not be inside the DOM target) are still considered inside the container.
+  // Close search results when clicking outside the search container (use ref)
   useEffect(() => {
-    const onPointerDown = (e) => {
+    const onDocClick = (e) => {
       const container = searchContainerRef.current;
       if (!container) return;
-      // If event has client coordinates, check if they're inside the container rect
-      const { clientX, clientY } = e;
-      if (typeof clientX === 'number' && typeof clientY === 'number') {
-        const rect = container.getBoundingClientRect();
-        const inside = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
-        if (!inside) setSearchResults([]);
-      } else {
-        // Fallback to contains if no coordinates
-        if (!container.contains(e.target)) setSearchResults([]);
+      if (!container.contains(e.target)) {
+        setSearchResults([]);
       }
     };
-    document.addEventListener('pointerdown', onPointerDown, true);
-    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
   }, []);
 
   function SearchResults() {
@@ -486,24 +477,25 @@ const App = () => {
 
           {/* Separate Player card */}
           <div className="bg-black rounded-2xl p-4 shadow-lg border border-[#36393f]">
-            <div ref={searchContainerRef} className="">
-              <div className="flex items-center gap-2">
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') performSearch(searchQuery); }}
-                  placeholder="Search Spotify..."
-                  className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
-                />
-                <button
-                  onClick={(e) => { e.stopPropagation(); performSearch(searchQuery); }}
-                  className="bg-[#5865f2] hover:bg-[#4752c4] text-white p-2 rounded"
-                  aria-label="Search"
-                >
-                  <SearchIcon className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="mt-3">
+            <h3 className="text-md font-semibold mb-4 text-[#b9bbbe]">Player</h3>
+            <div ref={searchContainerRef} className="flex items-center gap-2 spotcord-search-container">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') performSearch(searchQuery); }}
+                placeholder="Search Spotify..."
+                className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
+              />
+              <button
+                onClick={(e) => { e.stopPropagation(); performSearch(searchQuery); }}
+                className="bg-[#5865f2] hover:bg-[#4752c4] text-white p-2 rounded"
+                aria-label="Search"
+              >
+                <SearchIcon className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="mt-3">
+              <div ref={searchContainerRef} className="spotcord-search-container">
                 <SearchResults />
               </div>
             </div>
