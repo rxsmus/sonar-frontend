@@ -34,7 +34,6 @@ const App = () => {
     }
   }, []);
   const [currentSong, setCurrentSong] = useState(null);
-  const [currentProgress, setCurrentProgress] = useState(0);
   // Mode: 'song' or 'artist'
   const [mode, setMode] = useState(() => sessionStorage.getItem('lobby_mode') || 'song');
   const [spotifyUser, setSpotifyUser] = useState(null);
@@ -181,79 +180,54 @@ const App = () => {
     return () => document.removeEventListener('click', onDocClick);
   }, []);
 
-  // Memoized SearchResults to avoid re-renders while the SDK dispatches
-  // frequent player_state events which caused the scroll position to jump.
-  const SearchResults = React.useMemo(() => {
+  function SearchResults() {
     if (searchResults.length === 0) return null;
-    // Pre-generate nodes so they don't change identity across parent re-renders
-    const items = searchResults.map(r => (
-      <div
-        key={r.id}
-        onClick={() => {
-          window.SpotcordPlayerControls?.playUri?.(r.uri);
-          // clear results
-          setSearchResults([]);
-          setSearchQuery('');
-        }}
-        className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded cursor-pointer"
-      >
-        {r.albumUrl ? <img src={r.albumUrl} alt={r.title} className="w-10 h-10 rounded" /> : <div className="w-10 h-10 bg-[#23272a] rounded" />}
-        <div className="text-left">
-          <div className="text-sm text-white">{r.title}</div>
-          <div className="text-xs text-[#72767d]">{r.artist}</div>
-        </div>
-      </div>
-    ));
-
     return (
-      <div
-        ref={searchResultsRef}
-        className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto pr-1"
-        // Prevent parent/global handlers from interfering with wheel/touch
-        onWheel={(e) => { e.stopPropagation(); }}
-        onTouchStart={(e) => { e.stopPropagation(); }}
-        onTouchMove={(e) => { e.stopPropagation(); }}
-        style={{ touchAction: 'pan-y' }}
-      >
-        {items}
+      <div className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto pr-1">
+        {searchResults.map(r => (
+          <div
+            key={r.id}
+            onClick={() => {
+              window.SpotcordPlayerControls?.playUri?.(r.uri);
+              // clear results
+              setSearchResults([]);
+              setSearchQuery('');
+            }}
+            className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded cursor-pointer"
+          >
+            {r.albumUrl ? <img src={r.albumUrl} alt={r.title} className="w-10 h-10 rounded" /> : <div className="w-10 h-10 bg-[#23272a] rounded" />}
+            <div className="text-left">
+              <div className="text-sm text-white">{r.title}</div>
+              <div className="text-xs text-[#72767d]">{r.artist}</div>
+            </div>
+          </div>
+        ))}
       </div>
     );
-  }, [searchResults]);
+  }
 
   // Fetch from Flask backend and set songId/artist
   useEffect(() => {
     // replace polling with SDK event listener
-    const lastTrackIdRef = { current: null };
     const handleState = (e) => {
       const data = e.detail;
       if (!data || !data.track_id) {
-        lastTrackIdRef.current = null;
         setCurrentSong(null);
         setSongId(null);
         setArtist(null);
-        setCurrentProgress(0);
         return;
       }
-
-      // If the track changed, update the full currentSong (album, art, etc.).
-      // If it's the same track, only update the progress to avoid reflow.
-      if (lastTrackIdRef.current !== data.track_id) {
-        lastTrackIdRef.current = data.track_id;
-        setCurrentSong({
-          title: data.track_name,
-          artist: data.artists,
-          album: data.album_name,
-          duration: data.duration,
-          albumArt: data.album_image_url,
-          isPlaying: data.isPlaying,
-        });
-        setSongId(data.track_id);
-        if (data.artists) setArtist(data.artists.split(',')[0].trim());
-        setCurrentProgress(data.position || 0);
-      } else {
-        // Only update progress for the currently playing track
-        setCurrentProgress(data.position || 0);
-      }
+      setCurrentSong({
+        title: data.track_name,
+        artist: data.artists,
+        album: data.album_name,
+        duration: data.duration,
+        progress: data.position,
+        albumArt: data.album_image_url,
+        isPlaying: data.isPlaying,
+      });
+      setSongId(data.track_id);
+      if (data.artists) setArtist(data.artists.split(',')[0].trim());
     };
 
     window.addEventListener('spotcord_player_state', handleState);
@@ -419,7 +393,7 @@ const App = () => {
                     <div className="w-full bg-[#1f2123] rounded h-1 mt-2 overflow-hidden">
                       <div
                         className="h-1 bg-[#5865f2]"
-                        style={{ width: `${Math.min(100, Math.max(0, ((currentProgress || 0) / currentSong.duration) * 100))}%` }}
+                        style={{ width: `${Math.min(100, Math.max(0, ((currentSong.progress || 0) / currentSong.duration) * 100))}%` }}
                       />
                     </div>
                   )}
