@@ -165,12 +165,37 @@ const App = () => {
     }
   };
 
-  // NOTE: click-away to close search results intentionally disabled for debugging.
+  // Close search results when clicking outside the search container, but only
+  // attach the listener while results are open to avoid accidental closures.
+  useEffect(() => {
+    if (!searchResults || searchResults.length === 0) return;
+    const onDocClick = (e) => {
+      const container = document.querySelector('.spotcord-search-container');
+      if (!container) return;
+      if (!container.contains(e.target)) {
+        setSearchResults([]);
+      }
+    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, [searchResults]);
 
   function SearchResults() {
+    const listRef = useRef(null);
+    const savedPosRef = useRef(0);
+
+    useEffect(() => {
+      // restore scroll when results change (prevents jump to top on rerender)
+      if (listRef.current) {
+        try {
+          listRef.current.scrollTop = savedPosRef.current;
+        } catch (e) {}
+      }
+    }, [searchResults]);
+
     if (searchResults.length === 0) return null;
     return (
-      <div className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto pr-1">
+      <div ref={listRef} onScroll={(e) => { savedPosRef.current = e.target.scrollTop; }} className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto pr-1">
         {searchResults.map(r => (
           <div
             key={r.id}
