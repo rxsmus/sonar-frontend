@@ -166,17 +166,26 @@ const App = () => {
     }
   };
 
-  // Close search results when clicking outside the search container
+  // Close search results when clicking outside the search container.
+  // Use pointerdown + bounding rect check so clicks on the scrollbar (which
+  // may not be inside the DOM target) are still considered inside the container.
   useEffect(() => {
-    const onDocClick = (e) => {
+    const onPointerDown = (e) => {
       const container = searchContainerRef.current;
       if (!container) return;
-      if (!container.contains(e.target)) {
-        setSearchResults([]);
+      // If event has client coordinates, check if they're inside the container rect
+      const { clientX, clientY } = e;
+      if (typeof clientX === 'number' && typeof clientY === 'number') {
+        const rect = container.getBoundingClientRect();
+        const inside = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+        if (!inside) setSearchResults([]);
+      } else {
+        // Fallback to contains if no coordinates
+        if (!container.contains(e.target)) setSearchResults([]);
       }
     };
-    document.addEventListener('click', onDocClick);
-    return () => document.removeEventListener('click', onDocClick);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
   }, []);
 
   function SearchResults() {
