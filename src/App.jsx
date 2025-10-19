@@ -52,15 +52,22 @@ const App = () => {
   const BACKEND_BASE = 'https://spotcord-1.onrender.com';
   // Force Spotify login for all users
   const [spotifyConnected, setSpotifyConnected] = useState(() => !!sessionStorage.getItem('spotify_code'));
+  const [soundcloudConnected, setSoundcloudConnected] = useState(() => !!sessionStorage.getItem('soundcloud_code'));
 
   useEffect(() => {
     // Read code returned in URL (after backend callback redirects to frontend)
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
+    const scCode = params.get('sc_code');
     if (code) {
       sessionStorage.setItem('spotify_code', code);
       setSpotifyConnected(true);
       // Remove code from URL without reloading
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    if (scCode) {
+      sessionStorage.setItem('soundcloud_code', scCode);
+      setSoundcloudConnected(true);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     // NOTE: do not auto-redirect; show a home page and let the user click "Log in to Spotify".
@@ -234,12 +241,18 @@ const App = () => {
       <div className="max-w-xl text-center">
         <h1 className="text-4xl font-bold mb-4">Spotcord</h1>
         <p className="text-lg text-[#b9bbbe] mb-6">Connect your Spotify account to play music in-browser, join listening lobbies and chat with others.</p>
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center gap-3">
           <button
             onClick={() => { window.location.href = getSpotifyAuthUrl(); }}
             className="bg-[#1DB954] hover:bg-[#17a44a] text-white px-6 py-3 rounded-lg font-semibold"
           >
             Log in to Spotify
+          </button>
+          <button
+            onClick={() => { window.location.href = `https://soundcloud.com/connect?client_id=${encodeURIComponent('YOUR_SOUNDCLOUD_CLIENT_ID')}&redirect_uri=${encodeURIComponent('https://spotcord-1.onrender.com/sc_callback')}&response_type=code&scope=non-expiring`; }}
+            className="bg-[#ff5500] hover:bg-[#e64b00] text-white px-6 py-3 rounded-lg font-semibold"
+          >
+            Log in to SoundCloud
           </button>
         </div>
       </div>
@@ -401,6 +414,11 @@ const App = () => {
               Connected to Spotify
             </button>
           )}
+        </div>
+        <div>
+          {soundcloudConnected ? (
+            <div className="text-xs text-[#ff5500] mt-1">Connected to SoundCloud</div>
+          ) : null}
         </div>
         <div className="flex flex-col gap-2 w-full mt-2">
           <div className="flex flex-col bg-[#23272a] rounded-2xl p-1 w-full">
