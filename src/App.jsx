@@ -319,11 +319,12 @@ const App = () => {
   <aside
     className="w-28 min-w-24 h-full flex flex-col p-3 gap-4 justify-between"
     style={{
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.012))',
-      borderRight: '1px solid rgba(255,255,255,0.04)',
+      // semi-opaque grey base + subtle glossy gradient for a glass effect
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)), rgba(36,37,38,0.68)',
+      borderRight: '1px solid rgba(255,255,255,0.06)',
       backdropFilter: 'blur(8px) saturate(120%)',
       WebkitBackdropFilter: 'blur(8px) saturate(120%)',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 10px 30px rgba(0,0,0,0.6)'
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03), 0 8px 24px rgba(0,0,0,0.5)'
     }}
   >
       <div className="flex flex-col items-center gap-4">
