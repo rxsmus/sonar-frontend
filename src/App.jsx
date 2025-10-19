@@ -537,8 +537,13 @@ const App = () => {
                       console.error('volume set error', err);
                     }
                   }}
-                  className="w-36"
+                  className="w-24 h-1 rounded"
                   aria-label="Volume"
+                  style={{
+                    background: `linear-gradient(to right, #5865f2 ${volume}%, #1f2123 ${volume}%)`,
+                    WebkitAppearance: 'none',
+                    appearance: 'none'
+                  }}
                 />
               </div>
             </div>
