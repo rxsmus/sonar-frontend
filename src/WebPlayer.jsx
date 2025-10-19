@@ -135,6 +135,32 @@ export default function WebPlayer({ code, showUI = false }) {
       });
 
       player.connect();
+      // Start a short poll to read the player's current state frequently.
+      // Some SDKs emit player_state_changed infrequently; polling getCurrentState
+      // gives us smooth/near-real-time progress updates without manual increments.
+      const pollIntervalMs = 250;
+      const pollId = setInterval(async () => {
+        try {
+          const state = await player.getCurrentState();
+          if (!state) return;
+          const track = state.track_window && state.track_window.current_track;
+          const detail = {
+            isPlaying: !state.paused,
+            position: state.position,
+            duration: state.duration,
+            track_id: track ? track.id : null,
+            track_name: track ? track.name : null,
+            artists: track ? track.artists.map(a => a.name).join(', ') : null,
+            album_name: track && track.album ? track.album.name : null,
+            album_image_url: track && track.album && track.album.images && track.album.images[0] ? track.album.images[0].url : null,
+          };
+          window.dispatchEvent(new CustomEvent('spotcord_player_state', { detail }));
+        } catch (e) {
+          // ignore transient errors
+        }
+      }, pollIntervalMs);
+      // Save poll id so cleanup can clear it; attach to playerRef for access in cleanup
+      playerRef.current._pollId = pollId;
       // If the player doesn't become ready within 12s, surface an error
       readyTimeout = setTimeout(() => {
         if (!deviceRef.current) {
@@ -324,6 +350,12 @@ export default function WebPlayer({ code, showUI = false }) {
     return () => {
       mounted = false;
       if (playerRef.current) {
+        try {
+          if (playerRef.current._pollId) {
+            clearInterval(playerRef.current._pollId);
+            playerRef.current._pollId = null;
+          }
+        } catch (e) {}
         playerRef.current.disconnect();
       }
     };
