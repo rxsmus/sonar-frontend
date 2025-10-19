@@ -478,24 +478,24 @@ const App = () => {
           {/* Separate Player card */}
           <div className="bg-black rounded-2xl p-4 shadow-lg border border-[#36393f]">
             <h3 className="text-md font-semibold mb-4 text-[#b9bbbe]">Player</h3>
-            <div ref={searchContainerRef} className="flex items-center gap-2 spotcord-search-container">
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') performSearch(searchQuery); }}
-                placeholder="Search Spotify..."
-                className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
-              />
-              <button
-                onClick={(e) => { e.stopPropagation(); performSearch(searchQuery); }}
-                className="bg-[#5865f2] hover:bg-[#4752c4] text-white p-2 rounded"
-                aria-label="Search"
-              >
-                <SearchIcon className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="mt-3">
-              <div ref={searchContainerRef} className="spotcord-search-container">
+            <div ref={searchContainerRef} className="spotcord-search-wrapper">
+              <div className="flex items-center gap-2">
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') performSearch(searchQuery); }}
+                  placeholder="Search Spotify..."
+                  className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
+                />
+                <button
+                  onClick={(e) => { e.stopPropagation(); performSearch(searchQuery); }}
+                  className="bg-[#5865f2] hover:bg-[#4752c4] text-white p-2 rounded"
+                  aria-label="Search"
+                >
+                  <SearchIcon className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="mt-3">
                 <SearchResults />
               </div>
             </div>
