@@ -167,17 +167,33 @@ const App = () => {
 
   // Close search results when clicking outside the search container
   const searchContainerRef = useRef(null);
-  // Close search results when clicking outside the search container (use ref)
+  const searchResultsRef = useRef(null);
+  // Use pointer/touch handlers and ignore scroll/wheel events so scrolling
+  // inside the results doesn't trigger the outside-click closure.
   useEffect(() => {
-    const onDocClick = (e) => {
+    const onOutsidePointer = (e) => {
       const container = searchContainerRef.current;
       if (!container) return;
+      // If the pointer event is outside the search container, close results
       if (!container.contains(e.target)) {
         setSearchResults([]);
       }
     };
-    document.addEventListener('click', onDocClick);
-    return () => document.removeEventListener('click', onDocClick);
+
+    const onEscape = (e) => {
+      if (e.key === 'Escape') setSearchResults([]);
+    };
+
+    // pointerdown handles mouse and stylus; touchstart is included for older browsers
+    document.addEventListener('pointerdown', onOutsidePointer);
+    document.addEventListener('touchstart', onOutsidePointer);
+    document.addEventListener('keydown', onEscape);
+
+    return () => {
+      document.removeEventListener('pointerdown', onOutsidePointer);
+      document.removeEventListener('touchstart', onOutsidePointer);
+      document.removeEventListener('keydown', onEscape);
+    };
   }, []);
 
   function SearchResults() {
