@@ -394,7 +394,7 @@ const App = () => {
                   {currentSong && currentSong.duration > 0 && (
                     <div className="w-full bg-[#1f2123] rounded h-2 mt-2 overflow-hidden">
                       <div
-                        className="h-2 bg-[#5865f2]"
+                        className="h-1 bg-[#5865f2]"
                         style={{ width: `${Math.min(100, Math.max(0, ((currentSong.progress || 0) / currentSong.duration) * 100))}%` }}
                       />
                     </div>
