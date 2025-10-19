@@ -316,91 +316,48 @@ const App = () => {
   return (
   <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
     {/* Sidebar */}
-  <aside
-    className="w-28 min-w-24 h-full flex flex-col 
-              bg-white/10 backdrop-blur-xl border-r border-white/20 
-              shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]
-              p-3 gap-4 justify-between transition-all duration-300"
-  >
-    <div className="flex flex-col items-center gap-4">
-      {spotifyUser && (
-        <span className="text-xs text-[#43b581] text-center drop-shadow-sm">
-          {spotifyUser}
-        </span>
-      )}
-
-      <div className="flex flex-col gap-3 w-full mt-2">
-        <div
-          className="flex flex-col bg-white/10 backdrop-blur-md 
-                    rounded-2xl p-1 w-full border border-white/20 
-                    shadow-inner"
-        >
-          <button
-            className={`w-full px-2 py-2 rounded-t-xl text-xs font-semibold 
-                      transition-all duration-200 
-                      ${
-                        mode === 'artist'
-                          ? 'bg-[#43b581]/80 text-white shadow-md'
-                          : 'text-gray-300 hover:text-white hover:bg-white/10'
-                      }`}
-            onClick={() => {
-              setMode('artist');
-              sessionStorage.setItem('lobby_mode', 'artist');
-            }}
-          >
-            Artist
-          </button>
-
-          <button
-            className={`w-full px-2 py-2 rounded-b-xl text-xs font-semibold 
-                      transition-all duration-200 
-                      ${
-                        mode === 'song'
-                          ? 'bg-[#43b581]/80 text-white shadow-md'
-                          : 'text-gray-300 hover:text-white hover:bg-white/10'
-                      }`}
-            onClick={() => {
-              setMode('song');
-              sessionStorage.setItem('lobby_mode', 'song');
-            }}
-          >
-            Song
-          </button>
-        </div>
-
-        <div
-          className="flex items-center justify-center gap-1 
-                    bg-white/10 backdrop-blur-md 
-                    rounded-xl px-3 py-2 text-gray-200 text-xs 
-                    border border-white/20 shadow-sm transition-all duration-200"
-        >
-          <User className="w-4 h-4 opacity-80" />
-          <span>{onlineUsers.length}</span>
+  <aside className="w-28 min-w-24 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-3 gap-4 justify-between">
+      <div className="flex flex-col items-center gap-4">
+        {spotifyUser && (
+          <span className="text-xs text-[#43b581] text-center">{spotifyUser}</span>
+        )}
+        <div className="flex flex-col gap-2 w-full mt-2">
+          <div className="flex flex-col bg-[#23272a] rounded-2xl p-1 w-full">
+            <button
+              className={`w-full px-2 py-2 rounded-t-xl text-xs font-semibold focus:outline-none transition-colors duration-150 ${mode === 'artist' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
+              onClick={() => {
+                setMode('artist');
+                sessionStorage.setItem('lobby_mode', 'artist');
+              }}
+            >Artist</button>
+            <button
+              className={`w-full px-2 py-2 rounded-b-xl text-xs font-semibold focus:outline-none transition-colors duration-150 ${mode === 'song' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
+              onClick={() => {
+                setMode('song');
+                sessionStorage.setItem('lobby_mode', 'song');
+              }}
+            >Song</button>
+          </div>
+          {/* Web Playback SDK player moved to bottom fixed bar */}
+          <div className="flex items-center justify-center gap-1 bg-[#23272a] rounded-lg px-2 py-1 text-gray-300 text-xs shadow border border-[#36393f] w-full">
+            <User className="w-4 h-4" />
+            <span>{onlineUsers.length}</span>
+          </div>
         </div>
       </div>
-    </div>
-
-    <button
-      className="w-14 h-14 bg-red-500/80 hover:bg-red-500 
-                text-white rounded-2xl flex items-center justify-center 
-                transition-all duration-200 shadow-lg backdrop-blur-md 
-                border border-white/20 self-center mb-2"
-      title="Log out"
-      onClick={() => {
-        sessionStorage.clear();
-        window.location.href = getSpotifyAuthUrl();
-      }}
-      aria-label="Log out"
-    >
-      <img
-        src="/icons/logout-svgrepo-com.svg"
-        alt="Log out"
-        className="w-8 h-8 filter brightness-0 invert drop-shadow-md"
-      />
-      <span className="sr-only">Log out</span>
-    </button>
-  </aside>
-
+      <button
+        className="w-14 h-14 bg-[#ed4245] text-white rounded-2xl flex items-center justify-center hover:bg-[#b3242a] transition self-center mb-2"
+        title="Log out"
+        onClick={() => {
+          sessionStorage.clear();
+          window.location.href = getSpotifyAuthUrl();
+        }}
+        aria-label="Log out"
+      >
+        <img src="/icons/logout-svgrepo-com.svg" alt="Log out" className="w-8 h-8 filter brightness-0 invert" />
+        <span className="sr-only">Log out</span>
+      </button>
+    </aside>
 
   <main className="flex-1 h-full px-8 py-8 flex flex-col lg:flex-row gap-8">
           {/* Current Song Section */}
