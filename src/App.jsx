@@ -395,7 +395,7 @@ const App = () => {
   return (
   <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
     {/* Sidebar */}
-  <aside className="w-28 min-w-24 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-3 gap-4 justify-between">
+  <aside className="w-28 min-w-24 h-full flex flex-col liquid-glass p-3 gap-4 justify-between">
       <div className="flex flex-col items-center gap-4">
         {spotifyUser && (
           <span className="text-xs text-[#43b581] text-center">{spotifyUser}</span>
@@ -551,8 +551,8 @@ const App = () => {
         </section>
 
         {/* Sidebar (right column) */}
-        <aside className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-6">
-          <div className="bg-black rounded-2xl p-6 shadow-lg border border-[#36393f]">
+        <aside className="w-full lg:w-64 flex-shrink-0 flex flex-col gap-6 liquid-glass p-4">
+          <div className="bg-transparent rounded-2xl p-6 shadow-lg border border-[#36393f]">
             <h3 className="text-md font-semibold mb-4 flex items-center gap-2 text-[#b9bbbe]">
               <div className="w-3 h-3 bg-[#43b581] rounded-full mr-2"></div>
               Online Users
@@ -576,7 +576,7 @@ const App = () => {
           </div>
 
           {/* Separate Player card */}
-          <div className="bg-black rounded-2xl p-4 shadow-lg border border-[#36393f]">
+          <div className="bg-transparent rounded-2xl p-4 shadow-lg border border-[#36393f]">
             <div ref={searchContainerRef}>
               <div className="flex items-center gap-2">
                 <input

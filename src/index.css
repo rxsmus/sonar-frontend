@@ -83,3 +83,28 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Liquid glass utility for sidebars and panels
+   - Uses backdrop-filter where available for blur + saturation
+   - Provides a semi-opaque fallback background for browsers without support
+   - Keeps a subtle border and shadow to match the dark UI
+*/
+.liquid-glass {
+  --lg-bg: rgba(18, 18, 18, 0.42);
+  --lg-border: rgba(255, 255, 255, 0.04);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  background-color: var(--lg-bg);
+  border: 1px solid var(--lg-border);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+/* Slightly stronger fallback when the browser does not support backdrop-filter */
+@supports not ((-webkit-backdrop-filter: blur(0px)) or (backdrop-filter: blur(0px))) {
+  .liquid-glass {
+    background-color: rgba(18,18,18,0.92);
+  }
+}
+
