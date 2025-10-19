@@ -51,15 +51,19 @@ const SearchResults = memo(function SearchResults({ results, onSelect }) {
 const App = () => {
   const BACKEND_BASE = 'https://spotcord-1.onrender.com';
   // Force Spotify login for all users
+  const [spotifyConnected, setSpotifyConnected] = useState(() => !!sessionStorage.getItem('spotify_code'));
+
   useEffect(() => {
+    // Read code returned in URL (after backend callback redirects to frontend)
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code) {
       sessionStorage.setItem('spotify_code', code);
+      setSpotifyConnected(true);
+      // Remove code from URL without reloading
       window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (!sessionStorage.getItem('spotify_code')) {
-      window.location.href = getSpotifyAuthUrl();
     }
+    // NOTE: do not auto-redirect; show a home page and let the user click "Log in to Spotify".
   }, []);
   const [currentSong, setCurrentSong] = useState(null);
   // Mode: 'song' or 'artist'
@@ -224,6 +228,24 @@ const App = () => {
     };
   }, []);
 
+  // Home / not-logged-in UI: render a simple landing when not connected
+  const HomePage = () => (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="max-w-xl text-center">
+        <h1 className="text-4xl font-bold mb-4">Spotcord</h1>
+        <p className="text-lg text-[#b9bbbe] mb-6">Connect your Spotify account to play music in-browser, join listening lobbies and chat with others.</p>
+        <div className="flex justify-center">
+          <button
+            onClick={() => { window.location.href = getSpotifyAuthUrl(); }}
+            className="bg-[#1DB954] hover:bg-[#17a44a] text-white px-6 py-3 rounded-lg font-semibold"
+          >
+            Log in to Spotify
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
 
 
   // Stable callback so SearchResults doesn't re-render on every parent render.
@@ -346,6 +368,17 @@ const App = () => {
     if (e.key === 'Enter') handleSendMessage();
   };
 
+  if (!spotifyConnected) {
+    return (
+      <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
+        <main className="flex-1 h-full px-8 py-8 flex items-center">
+          <HomePage />
+        </main>
+        <Analytics />
+      </div>
+    );
+  }
+
   return (
   <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
     {/* Sidebar */}
@@ -354,6 +387,21 @@ const App = () => {
         {spotifyUser && (
           <span className="text-xs text-[#43b581] text-center">{spotifyUser}</span>
         )}
+        {/* Login / Connected button */}
+        <div>
+          {!spotifyConnected ? (
+            <button
+              onClick={() => { window.location.href = getSpotifyAuthUrl(); }}
+              className="bg-[#1DB954] text-white px-3 py-2 rounded-lg text-xs font-semibold"
+            >
+              Log in to Spotify
+            </button>
+          ) : (
+            <button className="bg-[#2f3136] text-[#43b581] px-3 py-2 rounded-lg text-xs font-semibold" disabled>
+              Connected to Spotify
+            </button>
+          )}
+        </div>
         <div className="flex flex-col gap-2 w-full mt-2">
           <div className="flex flex-col bg-[#23272a] rounded-2xl p-1 w-full">
             <button
@@ -383,7 +431,9 @@ const App = () => {
         title="Log out"
         onClick={() => {
           sessionStorage.clear();
-          window.location.href = getSpotifyAuthUrl();
+          setSpotifyConnected(false);
+          // stay on the app home after logout
+          window.location.href = '/';
         }}
         aria-label="Log out"
       >
