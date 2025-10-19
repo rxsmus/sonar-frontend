@@ -195,15 +195,21 @@ const App = () => {
 
   // Close search results when clicking outside the search container
   const searchContainerRef = useRef(null);
+  // Controls ref: clicking these should NOT close the search results
+  const controlsRef = useRef(null);
   // Use pointer/touch handlers and keyboard Escape to close; this avoids
   // clicks/wheel scroll inside the results from accidentally closing them.
   useEffect(() => {
     const onOutsidePointer = (e) => {
       const container = searchContainerRef.current;
+      const controls = controlsRef.current;
       if (!container) return;
-      if (!container.contains(e.target)) {
-        setSearchResults([]);
+      // If the event is inside the search container or inside the player
+      // controls area (play/pause/volume), don't close the results.
+      if (container.contains(e.target) || (controls && controls.contains(e.target))) {
+        return;
       }
+      setSearchResults([]);
     };
     const onEscape = (e) => {
       if (e.key === 'Escape') setSearchResults([]);
@@ -524,7 +530,7 @@ const App = () => {
                 <SearchResults results={searchResults} onSelect={handleSearchSelect} />
               </div>
             </div>
-            <div className="mt-4 flex items-center justify-center gap-3">
+            <div ref={controlsRef} className="mt-4 flex items-center justify-center gap-3">
               <button
                 onClick={() => window.SpotcordPlayerControls?.play?.()}
                 title="Play"
