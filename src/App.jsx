@@ -167,60 +167,57 @@ const App = () => {
 
   // Close search results when clicking outside the search container
   const searchContainerRef = useRef(null);
-  const searchResultsRef = useRef(null);
-  // Use pointer/touch handlers and ignore scroll/wheel events so scrolling
-  // inside the results doesn't trigger the outside-click closure.
+  // Close search results when clicking outside the search container (use ref)
   useEffect(() => {
-    const onOutsidePointer = (e) => {
+    const onDocClick = (e) => {
       const container = searchContainerRef.current;
       if (!container) return;
-      // If the pointer event is outside the search container, close results
       if (!container.contains(e.target)) {
         setSearchResults([]);
       }
     };
-
-    const onEscape = (e) => {
-      if (e.key === 'Escape') setSearchResults([]);
-    };
-
-    // pointerdown handles mouse and stylus; touchstart is included for older browsers
-    document.addEventListener('pointerdown', onOutsidePointer);
-    document.addEventListener('touchstart', onOutsidePointer);
-    document.addEventListener('keydown', onEscape);
-
-    return () => {
-      document.removeEventListener('pointerdown', onOutsidePointer);
-      document.removeEventListener('touchstart', onOutsidePointer);
-      document.removeEventListener('keydown', onEscape);
-    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
   }, []);
 
-  function SearchResults() {
+  // Memoized SearchResults to avoid re-renders while the SDK dispatches
+  // frequent player_state events which caused the scroll position to jump.
+  const SearchResults = React.useMemo(() => {
     if (searchResults.length === 0) return null;
+    // Pre-generate nodes so they don't change identity across parent re-renders
+    const items = searchResults.map(r => (
+      <div
+        key={r.id}
+        onClick={() => {
+          window.SpotcordPlayerControls?.playUri?.(r.uri);
+          // clear results
+          setSearchResults([]);
+          setSearchQuery('');
+        }}
+        className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded cursor-pointer"
+      >
+        {r.albumUrl ? <img src={r.albumUrl} alt={r.title} className="w-10 h-10 rounded" /> : <div className="w-10 h-10 bg-[#23272a] rounded" />}
+        <div className="text-left">
+          <div className="text-sm text-white">{r.title}</div>
+          <div className="text-xs text-[#72767d]">{r.artist}</div>
+        </div>
+      </div>
+    ));
+
     return (
-      <div className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto pr-1">
-        {searchResults.map(r => (
-          <div
-            key={r.id}
-            onClick={() => {
-              window.SpotcordPlayerControls?.playUri?.(r.uri);
-              // clear results
-              setSearchResults([]);
-              setSearchQuery('');
-            }}
-            className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded cursor-pointer"
-          >
-            {r.albumUrl ? <img src={r.albumUrl} alt={r.title} className="w-10 h-10 rounded" /> : <div className="w-10 h-10 bg-[#23272a] rounded" />}
-            <div className="text-left">
-              <div className="text-sm text-white">{r.title}</div>
-              <div className="text-xs text-[#72767d]">{r.artist}</div>
-            </div>
-          </div>
-        ))}
+      <div
+        ref={searchResultsRef}
+        className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto pr-1"
+        // Prevent parent/global handlers from interfering with wheel/touch
+        onWheel={(e) => { e.stopPropagation(); }}
+        onTouchStart={(e) => { e.stopPropagation(); }}
+        onTouchMove={(e) => { e.stopPropagation(); }}
+        style={{ touchAction: 'pan-y' }}
+      >
+        {items}
       </div>
     );
-  }
+  }, [searchResults]);
 
   // Fetch from Flask backend and set songId/artist
   useEffect(() => {
