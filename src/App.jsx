@@ -644,16 +644,3 @@ const App = () => {
 };
 
 export default App;
-
-// Fixed bottom player bar
-export function BottomPlayer() {
-  const code = sessionStorage.getItem('spotify_code');
-  if (!code) return null;
-  return (
-    <div className="fixed left-0 right-0 bottom-4 p-4 flex justify-center z-50">
-      <div className="bg-[#111213] rounded-lg border border-[#23272a] p-3 w-full max-w-3xl">
-        <WebPlayer code={code} />
-      </div>
-    </div>
-  );
-}
