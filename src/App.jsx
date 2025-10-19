@@ -319,14 +319,26 @@ const App = () => {
   <aside
     className="w-28 min-w-24 h-full flex flex-col p-3 gap-4 justify-between"
     style={{
-      // semi-opaque grey base + subtle glossy gradient for a glass effect
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)), rgba(36,37,38,0.68)',
+      position: 'relative',
+      // semi-opaque grey base; rely on sheen overlay to produce glass-like appearance
+      background: 'rgba(36,37,38,0.72)',
       borderRight: '1px solid rgba(255,255,255,0.06)',
-      backdropFilter: 'blur(8px) saturate(120%)',
-      WebkitBackdropFilter: 'blur(8px) saturate(120%)',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03), 0 8px 24px rgba(0,0,0,0.5)'
+      backdropFilter: 'blur(6px) saturate(120%)',
+      WebkitBackdropFilter: 'blur(6px) saturate(120%)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.03), 0 8px 20px rgba(0,0,0,0.5)'
     }}
   >
+    {/* Sheen overlay to simulate glass even if backdrop-filter is not visible */}
+    <div
+      aria-hidden="true"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 25%, rgba(255,255,255,0.00) 40%)',
+        mixBlendMode: 'overlay'
+      }}
+    />
       <div className="flex flex-col items-center gap-4">
         {spotifyUser && (
           <span className="text-xs text-[#43b581] text-center">{spotifyUser}</span>
