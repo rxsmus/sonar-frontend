@@ -74,7 +74,7 @@ export default function WebPlayer({ code, showUI = false }) {
       }
 
       const player = new window.Spotify.Player({
-        name: 'Spotcord Web Player',
+        name: 'sonar Web Player',
         getOAuthToken: async (cb) => {
           const t = await fetchAccessToken();
           cb(t);
@@ -128,7 +128,7 @@ export default function WebPlayer({ code, showUI = false }) {
             album_image_url: track && track.album && track.album.images && track.album.images[0] ? track.album.images[0].url : null,
           };
           // Broadcast SDK state to the app
-          window.dispatchEvent(new CustomEvent('spotcord_player_state', { detail }));
+          window.dispatchEvent(new CustomEvent('sonar_player_state', { detail }));
         } catch (e) {
           console.warn('Error processing player_state_changed', e);
         }
@@ -154,7 +154,7 @@ export default function WebPlayer({ code, showUI = false }) {
             album_name: track && track.album ? track.album.name : null,
             album_image_url: track && track.album && track.album.images && track.album.images[0] ? track.album.images[0].url : null,
           };
-          window.dispatchEvent(new CustomEvent('spotcord_player_state', { detail }));
+          window.dispatchEvent(new CustomEvent('sonar_player_state', { detail }));
         } catch (e) {
           // ignore transient errors
         }
@@ -232,7 +232,7 @@ export default function WebPlayer({ code, showUI = false }) {
 
       // window.deviceRef is already a useRef defined above; ensure it's set by
       // the ready listener. Expose control functions using that ref.
-      window.SpotcordPlayerControls = {
+  window.SonarPlayerControls = {
         play: async () => {
           try {
             // Prefer to use the SDK player directly when available

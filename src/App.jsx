@@ -239,7 +239,7 @@ const App = () => {
   const HomePage = () => (
     <div className="flex-1 flex items-center justify-center">
       <div className="max-w-xl text-center">
-        <h1 className="text-4xl font-bold mb-4">Spotcord</h1>
+  <h1 className="text-4xl font-bold mb-4">sonar</h1>
         <p className="text-lg text-[#b9bbbe] mb-6">Connect your Spotify account to play music in-browser, join listening lobbies and chat with others.</p>
         <div className="flex flex-col items-center gap-3">
           <button
@@ -264,7 +264,7 @@ const App = () => {
   // Stable callback so SearchResults doesn't re-render on every parent render.
   const handleSearchSelect = useCallback((r) => {
     try {
-      window.SpotcordPlayerControls?.playUri?.(r.uri);
+  window.SonarPlayerControls?.playUri?.(r.uri);
     } catch (e) {
       console.error('playUri failed', e);
     }
@@ -296,8 +296,8 @@ const App = () => {
       if (data.artists) setArtist(data.artists.split(',')[0].trim());
     };
 
-    window.addEventListener('spotcord_player_state', handleState);
-    return () => window.removeEventListener('spotcord_player_state', handleState);
+  window.addEventListener('sonar_player_state', handleState);
+  return () => window.removeEventListener('sonar_player_state', handleState);
   }, []);
 
 
@@ -335,7 +335,7 @@ const App = () => {
       socketRef.current.disconnect();
     }
     // Connect to new lobby
-    const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
+  const socket = io(`https://spotcord.onrender.com/lobby/${lobby}`);
     socketRef.current = socket;
     lobbyRef.current = lobby;
     setMessages([]); // Clear chat when switching lobbies
@@ -600,7 +600,7 @@ const App = () => {
             </div>
             <div ref={controlsRef} className="mt-4 flex items-center justify-center gap-3">
               <button
-                onClick={() => window.SpotcordPlayerControls?.play?.()}
+                onClick={() => window.SonarPlayerControls?.play?.()}
                 title="Play"
                 className="bg-[#43b581] hover:bg-[#369e67] p-2 rounded-lg"
                 aria-label="Play"
@@ -608,7 +608,7 @@ const App = () => {
                 <Play className="w-4 h-4 text-white" />
               </button>
               <button
-                onClick={() => window.SpotcordPlayerControls?.pause?.()}
+                onClick={() => window.SonarPlayerControls?.pause?.()}
                 title="Pause"
                 className="bg-[#5865f2] hover:bg-[#4752c4] p-2 rounded-lg"
                 aria-label="Pause"
@@ -631,7 +631,7 @@ const App = () => {
                       const tokenData = await tokenResp.json();
                       if (!tokenResp.ok || !tokenData.access_token) return;
                       const token = tokenData.access_token;
-                      const id = (window.SpotcordPlayerControls && window.SpotcordPlayerControls._deviceId) || null;
+                      const id = (window.SonarPlayerControls && window.SonarPlayerControls._deviceId) || null;
                       // Use deviceId from our WebPlayer if available, otherwise omit device_id so Spotify uses the active device
                       const url = id ? `https://api.spotify.com/v1/me/player/volume?device_id=${id}&volume_percent=${v}` : `https://api.spotify.com/v1/me/player/volume?volume_percent=${v}`;
                       await fetch(url, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } });
