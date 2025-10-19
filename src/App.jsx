@@ -316,7 +316,16 @@ const App = () => {
   return (
   <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
     {/* Sidebar */}
-  <aside className="w-28 min-w-24 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-3 gap-4 justify-between">
+  <aside
+    className="w-28 min-w-24 h-full flex flex-col p-3 gap-4 justify-between"
+    style={{
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.012))',
+      borderRight: '1px solid rgba(255,255,255,0.04)',
+      backdropFilter: 'blur(8px) saturate(120%)',
+      WebkitBackdropFilter: 'blur(8px) saturate(120%)',
+      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02), 0 10px 30px rgba(0,0,0,0.6)'
+    }}
+  >
       <div className="flex flex-col items-center gap-4">
         {spotifyUser && (
           <span className="text-xs text-[#43b581] text-center">{spotifyUser}</span>
