@@ -14,11 +14,39 @@ function getSpotifyAuthUrl() {
   return `https://accounts.spotify.com/authorize?${params.toString()}`;
 }
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { io } from 'socket.io-client';
 import { MessageCircle, Music, User, Send, Heart, Play, Pause, Search as SearchIcon } from 'lucide-react';
 import WebPlayer from './WebPlayer';
+
+// Top-level stable SearchResults component. Kept out of App to avoid
+// remounting during frequent parent re-renders (e.g. progress updates).
+const SearchResults = memo(function SearchResults({ results, onSelect }) {
+  if (!results || results.length === 0) return null;
+  return (
+    <div
+      className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto pr-1"
+      onPointerDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      style={{ overflowAnchor: 'none', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+    >
+      {results.map(r => (
+        <div
+          key={r.id}
+          onClick={() => onSelect(r)}
+          className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded cursor-pointer"
+        >
+          {r.albumUrl ? <img src={r.albumUrl} alt={r.title} className="w-10 h-10 rounded" /> : <div className="w-10 h-10 bg-[#23272a] rounded" />}
+          <div className="text-left">
+            <div className="text-sm text-white">{r.title}</div>
+            <div className="text-xs text-[#72767d]">{r.artist}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+});
 
 const App = () => {
   const BACKEND_BASE = 'https://spotcord-1.onrender.com';
@@ -167,44 +195,41 @@ const App = () => {
 
   // Close search results when clicking outside the search container
   const searchContainerRef = useRef(null);
-  // Close search results when clicking outside the search container (use ref)
+  // Use pointer/touch handlers and keyboard Escape to close; this avoids
+  // clicks/wheel scroll inside the results from accidentally closing them.
   useEffect(() => {
-    const onDocClick = (e) => {
+    const onOutsidePointer = (e) => {
       const container = searchContainerRef.current;
       if (!container) return;
       if (!container.contains(e.target)) {
         setSearchResults([]);
       }
     };
-    document.addEventListener('click', onDocClick);
-    return () => document.removeEventListener('click', onDocClick);
+    const onEscape = (e) => {
+      if (e.key === 'Escape') setSearchResults([]);
+    };
+    document.addEventListener('pointerdown', onOutsidePointer);
+    document.addEventListener('touchstart', onOutsidePointer);
+    document.addEventListener('keydown', onEscape);
+    return () => {
+      document.removeEventListener('pointerdown', onOutsidePointer);
+      document.removeEventListener('touchstart', onOutsidePointer);
+      document.removeEventListener('keydown', onEscape);
+    };
   }, []);
 
-  function SearchResults() {
-    if (searchResults.length === 0) return null;
-    return (
-      <div className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto pr-1">
-        {searchResults.map(r => (
-          <div
-            key={r.id}
-            onClick={() => {
-              window.SpotcordPlayerControls?.playUri?.(r.uri);
-              // clear results
-              setSearchResults([]);
-              setSearchQuery('');
-            }}
-            className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded cursor-pointer"
-          >
-            {r.albumUrl ? <img src={r.albumUrl} alt={r.title} className="w-10 h-10 rounded" /> : <div className="w-10 h-10 bg-[#23272a] rounded" />}
-            <div className="text-left">
-              <div className="text-sm text-white">{r.title}</div>
-              <div className="text-xs text-[#72767d]">{r.artist}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+
+
+  // Stable callback so SearchResults doesn't re-render on every parent render.
+  const handleSearchSelect = useCallback((r) => {
+    try {
+      window.SpotcordPlayerControls?.playUri?.(r.uri);
+    } catch (e) {
+      console.error('playUri failed', e);
+    }
+    setSearchResults([]);
+    setSearchQuery('');
+  }, []);
 
   // Fetch from Flask backend and set songId/artist
   useEffect(() => {
@@ -496,7 +521,7 @@ const App = () => {
                 </button>
               </div>
               <div className="mt-3">
-                <SearchResults />
+                <SearchResults results={searchResults} onSelect={handleSearchSelect} />
               </div>
             </div>
             <div className="mt-4 flex items-center justify-center gap-3">
