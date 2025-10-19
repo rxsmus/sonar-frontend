@@ -133,7 +133,7 @@ const App = () => {
       }
       const token = tokenData.access_token;
       const qEnc = encodeURIComponent(q);
-      const r = await fetch(`https://api.spotify.com/v1/search?q=${qEnc}&type=track&limit=8`, {
+      const r = await fetch(`https://api.spotify.com/v1/search?q=${qEnc}&type=track&limit=15`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!r.ok) {
@@ -181,7 +181,7 @@ const App = () => {
   function SearchResults() {
     if (searchResults.length === 0) return null;
     return (
-      <div className="flex flex-col gap-2 mt-2">
+      <div className="flex flex-col gap-2 mt-2 max-h-60 overflow-y-auto pr-1">
         {searchResults.map(r => (
           <div
             key={r.id}
