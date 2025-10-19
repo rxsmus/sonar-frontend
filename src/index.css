@@ -1,33 +1,16 @@
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 :root {
-  font-family: 'ibm', monospace;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  /* color: rgba(255, 255, 255, 0.87); */
-  /* background-color: #242424; */
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-@font-face {
-  font-family: 'ibm';
-  src: url('assets/fonts/ibm-plex-mono-latin-400-normal.Dm_PoFIZ.woff2') format('woff2');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-body {
-  font-family: 'ibm', sans-serif;
 }
 
 a {
@@ -83,28 +66,3 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
-
-/* Liquid glass utility for sidebars and panels
-   - Uses backdrop-filter where available for blur + saturation
-   - Provides a semi-opaque fallback background for browsers without support
-   - Keeps a subtle border and shadow to match the dark UI
-*/
-.liquid-glass {
-  --lg-bg: rgba(18, 18, 18, 0.42);
-  --lg-border: rgba(255, 255, 255, 0.04);
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  background-color: var(--lg-bg);
-  border: 1px solid var(--lg-border);
-  backdrop-filter: blur(10px) saturate(120%);
-  -webkit-backdrop-filter: blur(10px) saturate(120%);
-  box-shadow: 0 8px 30px rgba(2,6,23,0.6);
-  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-}
-
-/* Slightly stronger fallback when the browser does not support backdrop-filter */
-@supports not ((-webkit-backdrop-filter: blur(0px)) or (backdrop-filter: blur(0px))) {
-  .liquid-glass {
-    background-color: rgba(18,18,18,0.92);
-  }
-}
-
