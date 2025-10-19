@@ -105,6 +105,7 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const searchInProgressRef = useRef(false);
+  const [volume, setVolume] = useState(50);
 
   const performSearch = async (q) => {
     if (!q) return;
@@ -178,32 +179,27 @@ const App = () => {
   }, []);
 
   function SearchResults() {
+    if (searchResults.length === 0) return null;
     return (
-      <div>
-        {searchResults.length === 0 ? (
-          <p className="text-xs text-[#72767d]">No results</p>
-        ) : (
-          <div className="flex flex-col gap-2 mt-2">
-            {searchResults.map(r => (
-              <div
-                key={r.id}
-                onClick={() => {
-                  window.SpotcordPlayerControls?.playUri?.(r.uri);
-                  // clear results
-                  setSearchResults([]);
-                  setSearchQuery('');
-                }}
-                className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded cursor-pointer"
-              >
-                {r.albumUrl ? <img src={r.albumUrl} alt={r.title} className="w-10 h-10 rounded" /> : <div className="w-10 h-10 bg-[#23272a] rounded" />}
-                <div className="text-left">
-                  <div className="text-sm text-white">{r.title}</div>
-                  <div className="text-xs text-[#72767d]">{r.artist}</div>
-                </div>
-              </div>
-            ))}
+      <div className="flex flex-col gap-2 mt-2">
+        {searchResults.map(r => (
+          <div
+            key={r.id}
+            onClick={() => {
+              window.SpotcordPlayerControls?.playUri?.(r.uri);
+              // clear results
+              setSearchResults([]);
+              setSearchQuery('');
+            }}
+            className="flex items-center gap-3 p-2 hover:bg-[#23272a] rounded cursor-pointer"
+          >
+            {r.albumUrl ? <img src={r.albumUrl} alt={r.title} className="w-10 h-10 rounded" /> : <div className="w-10 h-10 bg-[#23272a] rounded" />}
+            <div className="text-left">
+              <div className="text-sm text-white">{r.title}</div>
+              <div className="text-xs text-[#72767d]">{r.artist}</div>
+            </div>
           </div>
-        )}
+        ))}
       </div>
     );
   }
@@ -392,7 +388,7 @@ const App = () => {
                   <p className="text-md text-[#72767d] mb-4">{currentSong.album}</p>
                   {/* Minimal song progress bar */}
                   {currentSong && currentSong.duration > 0 && (
-                    <div className="w-full bg-[#1f2123] rounded h-2 mt-2 overflow-hidden">
+                    <div className="w-full bg-[#1f2123] rounded h-1 mt-2 overflow-hidden">
                       <div
                         className="h-1 bg-[#5865f2]"
                         style={{ width: `${Math.min(100, Math.max(0, ((currentSong.progress || 0) / currentSong.duration) * 100))}%` }}
@@ -517,6 +513,34 @@ const App = () => {
               >
                 <Pause className="w-4 h-4 text-white" />
               </button>
+              <div className="flex items-center gap-2 ml-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={volume}
+                  onChange={async (e) => {
+                    const v = Number(e.target.value);
+                    setVolume(v);
+                    try {
+                      const code = sessionStorage.getItem('spotify_code');
+                      if (!code) return;
+                      const tokenResp = await fetch(`${BACKEND_BASE}/refresh?code=${encodeURIComponent(code)}`);
+                      const tokenData = await tokenResp.json();
+                      if (!tokenResp.ok || !tokenData.access_token) return;
+                      const token = tokenData.access_token;
+                      const id = (window.SpotcordPlayerControls && window.SpotcordPlayerControls._deviceId) || null;
+                      // Use deviceId from our WebPlayer if available, otherwise omit device_id so Spotify uses the active device
+                      const url = id ? `https://api.spotify.com/v1/me/player/volume?device_id=${id}&volume_percent=${v}` : `https://api.spotify.com/v1/me/player/volume?volume_percent=${v}`;
+                      await fetch(url, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } });
+                    } catch (err) {
+                      console.error('volume set error', err);
+                    }
+                  }}
+                  className="w-36"
+                  aria-label="Volume"
+                />
+              </div>
             </div>
           </div>
 
