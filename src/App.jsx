@@ -523,18 +523,45 @@ const App = () => {
             });
             widget.bind(window.SC.Widget.Events.PLAY_PROGRESS, (progress) => {
               // progress.currentPosition is milliseconds, relativePosition in [0,1]
+              const rel = progress.relativePosition ?? null;
+              const currentPos = progress.currentPosition || 0;
+              // Update duration if provided, otherwise query the widget for duration once
+              if (!progress.duration) {
+                try {
+                  widget.getDuration((d) => {
+                    setCurrentSong(prev => {
+                      const next = { ...(prev || {}), progress: currentPos, duration: d || prev?.duration || 0, relativePosition: rel };
+                      currentSongRef.current = next;
+                      return next;
+                    });
+                  });
+                } catch (e) {
+                  // ignore
+                }
+              }
               setCurrentSong(prev => {
-                const next = { ...(prev || {}), progress: progress.currentPosition || 0, duration: progress.duration || prev?.duration || 0 };
+                const next = { ...(prev || {}), progress: currentPos, duration: progress.duration || prev?.duration || 0, relativePosition: rel };
                 currentSongRef.current = next;
                 return next;
               });
             });
             widget.bind(window.SC.Widget.Events.PLAY, () => {
-              setCurrentSong(prev => {
-                const next = { ...(prev || {}), isPlaying: true, source: 'soundcloud' };
-                currentSongRef.current = next;
-                return next;
-              });
+              // Ensure we have duration information when playback starts
+              try {
+                widget.getDuration((d) => {
+                  setCurrentSong(prev => {
+                    const next = { ...(prev || {}), isPlaying: true, source: 'soundcloud', duration: d || prev?.duration || 0 };
+                    currentSongRef.current = next;
+                    return next;
+                  });
+                });
+              } catch (e) {
+                setCurrentSong(prev => {
+                  const next = { ...(prev || {}), isPlaying: true, source: 'soundcloud' };
+                  currentSongRef.current = next;
+                  return next;
+                });
+              }
             });
             widget.bind(window.SC.Widget.Events.PAUSE, () => {
               setCurrentSong(prev => {
@@ -839,12 +866,18 @@ const App = () => {
                   <h3 className="text-2xl font-bold mb-1 text-white">{currentSong.title}</h3>
                   <p className="text-lg text-[#b9bbbe] mb-1">{currentSong.artist}</p>
                   <p className="text-md text-[#72767d] mb-4">{currentSong.album}</p>
-                  {/* Minimal song progress bar */}
-                  {currentSong && currentSong.duration > 0 && (
+                  {/* Minimal song progress bar: show if we have duration OR a SoundCloud relativePosition */}
+                  {currentSong && ((currentSong.duration && currentSong.duration > 0) || (currentSong.relativePosition != null)) && (
                     <div className="w-full bg-[#1f2123] rounded h-1 mt-2 overflow-hidden">
                       <div
                         className="h-1 bg-[#5865f2]"
-                        style={{ width: `${Math.min(100, Math.max(0, ((currentSong.progress || 0) / currentSong.duration) * 100))}%` }}
+                        style={{
+                          width: `${Math.min(100, Math.max(0, (
+                            currentSong.relativePosition != null
+                              ? currentSong.relativePosition * 100
+                              : ((currentSong.progress || 0) / currentSong.duration) * 100
+                          )))}%`
+                        }}
                       />
                     </div>
                   )}
