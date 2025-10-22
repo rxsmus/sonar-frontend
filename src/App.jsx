@@ -712,10 +712,10 @@ const App = () => {
   <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
     {/* Sidebar */}
   <aside
-    className="w-28 min-w-24 h-full flex flex-col dark-glass border-r border-[#23272a] shadow-lg p-3 gap-4"
-    style={{ backgroundImage: `url('/icons/dark-circular-gradient-05-10-2024-1728197886-hd-wallpaper.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center center' }}
+    className="w-32 min-w-28 h-full flex flex-col dark-glass border-r border-[#23272a] shadow-lg p-3 gap-4"
+    style={{ background: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('/icons/dark-circular-gradient-05-10-2024-1728197886-hd-wallpaper.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center center' }}
   >
-    <div className="flex flex-col items-center gap-4 w-full h-full sidebar-glass" style={{ background: 'rgba(0,0,0,0.35)' }}>
+    <div className="flex flex-col items-center gap-4 w-full h-full sidebar-glass">
         {/* Artist / Song toggle at the top */}
         <div className="w-full">
           <div className="flex flex-col bg-[#23272a] rounded-2xl p-1 w-full">
@@ -816,7 +816,7 @@ const App = () => {
           {/* Current Song Section */}
         {/* Main Content (Current Song + Chat) */}
         <section className="flex-1 flex flex-col gap-6">
-          <div className="glass rounded-2xl p-6 shadow-lg border border-[#36393f] player-glass">
+          <div className="bg-black rounded-2xl p-6 shadow-lg border border-[#36393f]">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-[#b9bbbe]">
               <Music className="w-5 h-5 text-[#5865f2]" />
               Now Playing
