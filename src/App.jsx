@@ -712,11 +712,9 @@ const App = () => {
   <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
     {/* Sidebar */}
   <aside
-    className="relative w-32 min-w-28 h-full flex flex-col dark-glass border-r border-[#23272a] shadow-lg p-3 gap-4"
-    style={{ background: `url('/icons/dark-circular-gradient-05-10-2024-1728197886-hd-wallpaper.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center center' }}
+    className="w-32 min-w-28 h-full flex flex-col dark-glass border-r border-[#23272a] shadow-lg p-3 gap-4"
+    style={{ background: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('/icons/dark-circular-gradient-05-10-2024-1728197886-hd-wallpaper.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center center' }}
   >
-    {/* full-size overlay to ensure the glass tint covers entire wallpaper */}
-    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', borderRadius: 'inherit', pointerEvents: 'none' }} />
     <div className="flex flex-col items-center gap-4 w-full h-full sidebar-glass">
         {/* Artist / Song toggle at the top */}
         <div className="w-full">
