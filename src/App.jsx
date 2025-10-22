@@ -217,6 +217,30 @@ const App = () => {
   const [volume, setVolume] = useState(50);
   // Audio element for SoundCloud playback
   const audioRef = useRef(null);
+  // SoundCloud widget refs
+  const scPlayerContainerRef = useRef(null);
+  const scIframeRef = useRef(null);
+  const scWidgetRef = useRef(null);
+
+  // Helper to dynamically load SoundCloud Widget script
+  function loadSCWidgetScript() {
+    return new Promise((resolve, reject) => {
+      if (window.SC && window.SC.Widget) return resolve(window.SC);
+      const existing = document.querySelector('script[data-sc-widget]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(window.SC));
+        existing.addEventListener('error', reject);
+        return;
+      }
+      const s = document.createElement('script');
+      s.setAttribute('data-sc-widget', '1');
+      s.src = 'https://w.soundcloud.com/player/api.js';
+      s.async = true;
+      s.onload = () => resolve(window.SC);
+      s.onerror = (e) => reject(e);
+      document.head.appendChild(s);
+    });
+  }
 
   const performSearch = async (q) => {
     if (!q) return;
@@ -377,59 +401,66 @@ const App = () => {
         if (r.source === 'soundcloud') {
           // stop spotify player if running
           try { window.SonarPlayerControls?.pause?.(); } catch (e) {}
-          if (!audioRef.current) audioRef.current = new Audio();
-          audioRef.current.crossOrigin = 'anonymous';
 
-          // Prefer authenticated stream endpoints when we have a server-provided OAuth token
-          let played = false;
+          // Cleanup existing widget/iframe if present
           try {
-            if (soundcloudToken) {
-              // Try the official tracks endpoint which supports Authorization: OAuth <token>
-              const authStream = `https://api.soundcloud.com/tracks/${r.id}/stream`;
-              audioRef.current.src = authStream;
-              audioRef.current.removeAttribute('src');
-              // Use fetch to verify CORS/Authorization; if OK, set srcObject via blob
-              const resp = await fetch(authStream, { headers: { Authorization: `OAuth ${soundcloudToken}` } });
-              if (resp.ok) {
-                const blob = await resp.blob();
-                audioRef.current.src = URL.createObjectURL(blob);
-                await audioRef.current.play();
-                played = true;
-              }
+            if (scWidgetRef.current && scWidgetRef.current.unbind) {
+              scWidgetRef.current.unbind(SC.Widget.Events.PLAY_PROGRESS);
+              scWidgetRef.current.unbind(SC.Widget.Events.PLAY);
+              scWidgetRef.current.unbind(SC.Widget.Events.PAUSE);
+              scWidgetRef.current.unbind(SC.Widget.Events.FINISH);
             }
+          } catch (e) {}
+          if (scIframeRef.current) {
+            try { scIframeRef.current.remove(); } catch (e) {}
+            scIframeRef.current = null;
+            scWidgetRef.current = null;
+          }
+
+          // Ensure widget script is loaded and then create an iframe player via the Widget API
+          try {
+            await loadSCWidgetScript();
+            const trackApiUrl = encodeURIComponent(`https://api.soundcloud.com/tracks/${r.id}`);
+            const params = `auto_play=true&show_artwork=false&visual=false`;
+            const iframeSrc = `https://w.soundcloud.com/player/?url=${trackApiUrl}&${params}`;
+
+            const iframe = document.createElement('iframe');
+            iframe.width = '100%';
+            iframe.height = '1';
+            iframe.style.display = 'none';
+            iframe.allow = 'autoplay';
+            iframe.src = iframeSrc;
+            // Insert into the container
+            const container = scPlayerContainerRef.current || document.body;
+            container.appendChild(iframe);
+            scIframeRef.current = iframe;
+
+            // Create widget and bind events
+            const widget = window.SC.Widget(iframe);
+            scWidgetRef.current = widget;
+
+            widget.bind(window.SC.Widget.Events.READY, () => {
+              try {
+                // set initial volume to current slider
+                widget.setVolume(Math.round(volume));
+                widget.play();
+              } catch (e) {}
+            });
+            widget.bind(window.SC.Widget.Events.PLAY_PROGRESS, (progress) => {
+              // progress.currentPosition is milliseconds, relativePosition in [0,1]
+              setCurrentSong(prev => ({ ...(prev || {}), progress: progress.currentPosition || 0, duration: progress.duration || prev?.duration || 0 }));
+            });
+            widget.bind(window.SC.Widget.Events.PLAY, () => setCurrentSong(prev => ({ ...(prev || {}), isPlaying: true, source: 'soundcloud' })));
+            widget.bind(window.SC.Widget.Events.PAUSE, () => setCurrentSong(prev => ({ ...(prev || {}), isPlaying: false })));
+            widget.bind(window.SC.Widget.Events.FINISH, () => setCurrentSong(prev => ({ ...(prev || {}), isPlaying: false, progress: prev?.duration || 0 })));
+
+            setCurrentSong({ title: r.title, artist: r.artist, album: '', duration: 0, progress: 0, albumArt: r.albumUrl, isPlaying: true, source: 'soundcloud', permalink: r.permalink });
           } catch (e) {
-            console.warn('authenticated SC stream failed', e);
-          }
-
-          // Fallbacks: try stream_url or transcodings if available, otherwise use public client_id stream URL
-          if (!played) {
-            try {
-              // If the search result had a stream_url property, try it
-              if (r.stream_url) {
-                audioRef.current.src = `${r.stream_url}?client_id=${SOUNDCLOUD_CLIENT_ID}`;
-                await audioRef.current.play();
-                played = true;
-              } else if (r.streamable) {
-                // Use the common /tracks/{id}/stream?client_id= fallback
-                audioRef.current.src = `https://api.soundcloud.com/tracks/${r.id}/stream?client_id=${SOUNDCLOUD_CLIENT_ID}`;
-                await audioRef.current.play();
-                played = true;
-              }
-            } catch (e) {
-              console.warn('soundcloud fallback play failed', e);
-            }
-          }
-
-          if (!played) {
-            // As the last resort open the permalink in a new tab
+            console.warn('SC widget creation/play failed', e);
+            // Last resort: open the permalink
             window.open(r.permalink, '_blank');
             setCurrentSong(prev => ({ ...(prev || {}), isPlaying: false }));
-            setSearchResults([]);
-            setSearchQuery('');
-            return;
           }
-
-          setCurrentSong({ title: r.title, artist: r.artist, album: '', duration: 0, progress: 0, albumArt: r.albumUrl, isPlaying: true, source: 'soundcloud', permalink: r.permalink });
         } else {
           window.SonarPlayerControls?.playUri?.(r.uri);
           setCurrentSong(prev => ({ ...(prev || {}), isPlaying: true, source: 'spotify' }));
@@ -821,7 +852,13 @@ const App = () => {
                     setVolume(v);
                     try {
                       if (currentSong && currentSong.source === 'soundcloud') {
-                        if (audioRef.current) audioRef.current.volume = v / 100;
+                        try {
+                          if (scWidgetRef.current && scWidgetRef.current.setVolume) {
+                            scWidgetRef.current.setVolume(Math.round(v));
+                          } else if (audioRef.current) {
+                            audioRef.current.volume = v / 100;
+                          }
+                        } catch (e) { console.warn('set volume failed', e); }
                         return;
                       }
                       const code = sessionStorage.getItem('spotify_code');
@@ -849,8 +886,10 @@ const App = () => {
               </div>
             </div>
           </div>
-          {/* Hidden audio element used for SoundCloud streaming */}
+          {/* Hidden audio element used as fallback for SoundCloud streaming */}
           <audio ref={audioRef} style={{ display: 'none' }} />
+          {/* Container for SoundCloud iframe widget (invisible) */}
+          <div ref={scPlayerContainerRef} style={{ display: 'none' }} />
 
           <div className="hidden">
             <WebPlayer code={sessionStorage.getItem('spotify_code')} showUI={false} />
