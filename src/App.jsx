@@ -448,20 +448,20 @@ const App = () => {
       <div className="max-w-xl text-center">
   <h1 className="text-4xl font-bold mb-4">sonar</h1>
         <p className="text-lg text-[#b9bbbe] mb-6">Connect your account to play music in-browser and match with other users listening to the same song.</p>
-        <div className="flex flex-col items-center gap-3">
-          <button
-            onClick={() => { window.location.href = getSpotifyAuthUrl(); }}
-            className="bg-[#1DB954] hover:bg-[#17a44a] text-white px-6 py-3 rounded-lg font-semibold"
-          >
-            Log in to Spotify
-          </button>
-          <button
-            onClick={() => { window.location.href = getSoundCloudAuthUrl(); }}
-            className="bg-[#ff5500] hover:bg-[#e64b00] text-white px-6 py-3 rounded-lg font-semibold"
-          >
-            Log in to SoundCloud
-          </button>
-        </div>
+          <div className="flex flex-col items-center gap-3">
+            <button
+              onClick={() => { window.location.href = getSpotifyAuthUrl(); }}
+              className="bg-[#1DB954] hover:bg-[#17a44a] text-white px-6 py-3 rounded-lg font-semibold"
+            >
+              Log in to Spotify
+            </button>
+            <button
+              onClick={() => { window.location.href = getSoundCloudAuthUrl(); }}
+              className="bg-[#ff5500] hover:bg-[#e64b00] text-white px-6 py-3 rounded-lg font-semibold"
+            >
+              Log in to SoundCloud
+            </button>
+          </div>
       </div>
     </div>
   );
@@ -748,21 +748,19 @@ const App = () => {
                   window.location.href = getSpotifyAuthUrl();
                 }
               }}
-                  title={spotifyConnected ? 'Connected to Spotify' : 'Connect to Spotify'}
-                  className="relative w-14 h-14 flex items-center justify-center rounded-2xl bg-transparent hover:bg-[#0f0f0f] transition"
-                  style={{ overflow: 'hidden' }}
-                >
-                  <img src="/icons/spotify-tile.svg" alt="Spotify" className="w-full h-full object-contain" />
-                  <span style={{ position: 'absolute', right: 6, bottom: 6 }}>
-                    {spotifyConnected ? (
-                      // filled green dot when connected
-                      <div className="w-3.5 h-3.5 rounded-full" style={{ background: '#43b581', border: '1px solid rgba(0,0,0,0.6)' }} />
-                    ) : (
-                      // empty grey ring when not connected
-                      <div className="w-3.5 h-3.5 rounded-full" style={{ border: '2px solid #6b7280', background: 'transparent' }} />
-                    )}
-                  </span>
-                </button>
+              title={spotifyConnected ? 'Connected to Spotify' : 'Connect to Spotify'}
+              className="relative w-14 h-14 p-0 flex items-center justify-center rounded-2xl bg-transparent hover:bg-[#0f0f0f] transition"
+              style={{ overflow: 'hidden' }}
+            >
+              <img src="/icons/spotify-tile.svg" alt="Spotify" className="absolute inset-0 w-full h-full object-cover" />
+              <span style={{ position: 'absolute', right: 6, bottom: 6 }} className="z-10">
+                {spotifyConnected ? (
+                  <div className="w-3.5 h-3.5 rounded-full" style={{ background: '#43b581', border: '1px solid rgba(0,0,0,0.6)' }} />
+                ) : (
+                  <div className="w-3.5 h-3.5 rounded-full" style={{ border: '2px solid #6b7280', background: 'transparent' }} />
+                )}
+              </span>
+            </button>
 
             {/* SoundCloud logo - enlarged to match logout button */}
             <button
@@ -772,16 +770,14 @@ const App = () => {
                 }
               }}
               title={soundcloudConnected ? 'Connected to SoundCloud' : 'Connect to SoundCloud'}
-              className="relative w-14 h-14 flex items-center justify-center rounded-2xl bg-transparent hover:bg-[#0f0f0f] transition"
+              className="relative w-14 h-14 p-0 flex items-center justify-center rounded-2xl bg-transparent hover:bg-[#0f0f0f] transition"
               style={{ overflow: 'hidden' }}
             >
-                  <img src="/icons/soundcloud-tile.svg" alt="SoundCloud" className="w-full h-full object-contain" />
-              <span style={{ position: 'absolute', right: 6, bottom: 6 }}>
+              <img src="/icons/soundcloud-tile.svg" alt="SoundCloud" className="absolute inset-0 w-full h-full object-cover" />
+              <span style={{ position: 'absolute', right: 6, bottom: 6 }} className="z-10">
                 {soundcloudConnected ? (
-                  // filled green dot when connected
                   <div className="w-3.5 h-3.5 rounded-full" style={{ background: '#43b581', border: '1px solid rgba(0,0,0,0.6)' }} />
                 ) : (
-                  // empty grey ring when not connected
                   <div className="w-3.5 h-3.5 rounded-full" style={{ border: '2px solid #6b7280', background: 'transparent' }} />
                 )}
               </span>
