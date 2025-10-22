@@ -689,31 +689,9 @@ const App = () => {
   <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
     {/* Sidebar */}
   <aside className="w-28 min-w-24 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-3 gap-4 justify-between">
-      <div className="flex flex-col items-center gap-4">
-        {spotifyUser && (
-          <span className="text-xs text-[#43b581] text-center">{spotifyUser}</span>
-        )}
-        {/* Login / Connected button */}
-        <div>
-          {!spotifyConnected ? (
-            <button
-              onClick={() => { window.location.href = getSpotifyAuthUrl(); }}
-              className="bg-[#1DB954] text-white px-3 py-2 rounded-lg text-xs font-semibold"
-            >
-              Log in to Spotify
-            </button>
-          ) : (
-            <button className="bg-[#2f3136] text-[#43b581] px-3 py-2 rounded-lg text-xs font-semibold" disabled>
-              Connected to Spotify
-            </button>
-          )}
-        </div>
-        <div>
-          {soundcloudConnected ? (
-            <div className="text-xs text-[#ff5500] mt-1">Connected to SoundCloud</div>
-          ) : null}
-        </div>
-        <div className="flex flex-col gap-2 w-full mt-2">
+      <div className="flex flex-col items-center gap-4 w-full">
+        {/* Artist / Song toggle at the top */}
+        <div className="w-full">
           <div className="flex flex-col bg-[#23272a] rounded-2xl p-1 w-full">
             <button
               className={`w-full px-2 py-2 rounded-t-xl text-xs font-semibold focus:outline-none transition-colors duration-150 ${mode === 'artist' ? 'bg-[#43b581] text-white' : 'bg-transparent text-gray-400'}`}
@@ -730,30 +708,80 @@ const App = () => {
               }}
             >Song</button>
           </div>
-          {/* Web Playback SDK player moved to bottom fixed bar */}
-          <div className="flex items-center justify-center gap-1 bg-[#23272a] rounded-lg px-2 py-1 text-gray-300 text-xs shadow border border-[#36393f] w-full">
-            <User className="w-4 h-4" />
-            <span>{onlineUsers.length}</span>
+        </div>
+
+        {/* Online counter */}
+        <div className="flex items-center justify-center gap-1 bg-[#23272a] rounded-lg px-2 py-1 text-gray-300 text-xs shadow border border-[#36393f] w-full">
+          <User className="w-4 h-4" />
+          <span>{onlineUsers.length}</span>
+        </div>
+
+        {/* spacer to push logos and logout to bottom */}
+        <div style={{ flex: 1 }} />
+
+        {/* Bottom controls: Spotify icon, SoundCloud icon, Logout */}
+        <div className="w-full flex flex-col items-center gap-3">
+          <div className="flex items-center gap-3">
+            {/* Spotify logo */}
+            <button
+              onClick={() => {
+                if (!spotifyConnected) {
+                  window.location.href = getSpotifyAuthUrl();
+                }
+              }}
+              title={spotifyConnected ? 'Connected to Spotify' : 'Connect to Spotify'}
+              className="relative"
+            >
+              <img src="/icons/spotify.svg" alt="Spotify" className="w-8 h-8" />
+              <span style={{ position: 'absolute', right: -2, bottom: -2 }}>
+                {spotifyConnected ? (
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#43b581', border: '1px solid #0f0f0f' }} />
+                ) : (
+                  <div className="w-3 h-3 rounded-full" style={{ border: '2px solid #6b7280', background: 'transparent' }} />
+                )}
+              </span>
+            </button>
+
+            {/* SoundCloud logo */}
+            <button
+              onClick={() => {
+                if (!soundcloudConnected) {
+                  window.location.href = getSoundCloudAuthUrl();
+                }
+              }}
+              title={soundcloudConnected ? 'Connected to SoundCloud' : 'Connect to SoundCloud'}
+              className="relative"
+            >
+              <img src="/icons/soundcloud.svg" alt="SoundCloud" className="w-8 h-8" />
+              <span style={{ position: 'absolute', right: -2, bottom: -2 }}>
+                {soundcloudConnected ? (
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#ff5500', border: '1px solid #0f0f0f' }} />
+                ) : (
+                  <div className="w-3 h-3 rounded-full" style={{ border: '2px solid #6b7280', background: 'transparent' }} />
+                )}
+              </span>
+            </button>
           </div>
+
+          <button
+            className="w-14 h-14 bg-[#ed4245] text-white rounded-2xl flex items-center justify-center hover:bg-[#b3242a] transition self-center mb-2"
+            title="Log out"
+            onClick={() => {
+              // stop players and cleanup
+              stopOtherPlayersExcept(null);
+              sessionStorage.clear();
+              setSpotifyConnected(false);
+              setSoundcloudConnected(false);
+              // stay on the app home after logout
+              window.location.href = '/';
+            }}
+            aria-label="Log out"
+          >
+            <img src="/icons/logout-svgrepo-com.svg" alt="Log out" className="w-8 h-8 filter brightness-0 invert" />
+            <span className="sr-only">Log out</span>
+          </button>
         </div>
       </div>
-      <button
-        className="w-14 h-14 bg-[#ed4245] text-white rounded-2xl flex items-center justify-center hover:bg-[#b3242a] transition self-center mb-2"
-        title="Log out"
-        onClick={() => {
-          // stop players and cleanup
-          stopOtherPlayersExcept(null);
-          sessionStorage.clear();
-          setSpotifyConnected(false);
-          setSoundcloudConnected(false);
-          // stay on the app home after logout
-          window.location.href = '/';
-        }}
-        aria-label="Log out"
-      >
-        <img src="/icons/logout-svgrepo-com.svg" alt="Log out" className="w-8 h-8 filter brightness-0 invert" />
-        <span className="sr-only">Log out</span>
-      </button>
     </aside>
 
   <main className="flex-1 h-full px-8 py-8 flex flex-col lg:flex-row gap-8">
