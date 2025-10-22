@@ -268,15 +268,28 @@ const App = () => {
         });
         setSearchResults(mapped);
       } else {
-        // SoundCloud public search (client_id based)
+        // SoundCloud search. Prefer using server-backed OAuth token if available
         const qEnc = encodeURIComponent(q);
-        const r = await fetch(`https://api.soundcloud.com/tracks?q=${qEnc}&client_id=${SOUNDCLOUD_CLIENT_ID}&limit=15`);
+        // Use params that surface playable tracks and enable partitioning for richer results
+        const params = `q=${qEnc}&limit=15&access=playable&linked_partitioning=true`;
+        let r;
+        if (soundcloudToken) {
+          // Authenticated search (better results, avoids client_id deprecation issues)
+          r = await fetch(`https://api.soundcloud.com/tracks?${params}`, {
+            headers: { Authorization: `OAuth ${soundcloudToken}` },
+          });
+        } else {
+          // Fallback to public client_id (may be rate-limited or unsupported for some accounts)
+          r = await fetch(`https://api.soundcloud.com/tracks?${params}&client_id=${SOUNDCLOUD_CLIENT_ID}`);
+        }
         if (!r.ok) {
           console.warn('soundcloud search failed', await r.text());
           setSearchResults([]);
           return;
         }
-        const items = await r.json();
+        const data = await r.json();
+        // The API may return either an array of tracks or an object with a `collection` array
+        const items = Array.isArray(data) ? data : data.collection || [];
         const mapped = (items || []).map(track => ({
           id: track.id,
           title: track.title,
@@ -284,7 +297,11 @@ const App = () => {
           uri: track.permalink_url,
           albumUrl: track.artwork_url || null,
           source: 'soundcloud',
-          permalink: track.permalink_url
+          permalink: track.permalink_url,
+          streamable: !!track.streamable || !!track.stream_url || !!(track.media && track.media.transcodings),
+          // keep stream_url and media for downstream playback logic
+          stream_url: track.stream_url || null,
+          media: track.media || null,
         }));
         setSearchResults(mapped);
       }
@@ -360,13 +377,58 @@ const App = () => {
         if (r.source === 'soundcloud') {
           // stop spotify player if running
           try { window.SonarPlayerControls?.pause?.(); } catch (e) {}
-          // Build stream URL: try direct stream endpoint with client_id
-          // Note: CORS may apply; if this fails you can fallback to opening permalink.
-          const streamUrl = `https://api.soundcloud.com/tracks/${r.id}/stream?client_id=${SOUNDCLOUD_CLIENT_ID}`;
           if (!audioRef.current) audioRef.current = new Audio();
-          audioRef.current.src = streamUrl;
           audioRef.current.crossOrigin = 'anonymous';
-          audioRef.current.play().catch(err => console.warn('soundcloud play failed', err));
+
+          // Prefer authenticated stream endpoints when we have a server-provided OAuth token
+          let played = false;
+          try {
+            if (soundcloudToken) {
+              // Try the official tracks endpoint which supports Authorization: OAuth <token>
+              const authStream = `https://api.soundcloud.com/tracks/${r.id}/stream`;
+              audioRef.current.src = authStream;
+              audioRef.current.removeAttribute('src');
+              // Use fetch to verify CORS/Authorization; if OK, set srcObject via blob
+              const resp = await fetch(authStream, { headers: { Authorization: `OAuth ${soundcloudToken}` } });
+              if (resp.ok) {
+                const blob = await resp.blob();
+                audioRef.current.src = URL.createObjectURL(blob);
+                await audioRef.current.play();
+                played = true;
+              }
+            }
+          } catch (e) {
+            console.warn('authenticated SC stream failed', e);
+          }
+
+          // Fallbacks: try stream_url or transcodings if available, otherwise use public client_id stream URL
+          if (!played) {
+            try {
+              // If the search result had a stream_url property, try it
+              if (r.stream_url) {
+                audioRef.current.src = `${r.stream_url}?client_id=${SOUNDCLOUD_CLIENT_ID}`;
+                await audioRef.current.play();
+                played = true;
+              } else if (r.streamable) {
+                // Use the common /tracks/{id}/stream?client_id= fallback
+                audioRef.current.src = `https://api.soundcloud.com/tracks/${r.id}/stream?client_id=${SOUNDCLOUD_CLIENT_ID}`;
+                await audioRef.current.play();
+                played = true;
+              }
+            } catch (e) {
+              console.warn('soundcloud fallback play failed', e);
+            }
+          }
+
+          if (!played) {
+            // As the last resort open the permalink in a new tab
+            window.open(r.permalink, '_blank');
+            setCurrentSong(prev => ({ ...(prev || {}), isPlaying: false }));
+            setSearchResults([]);
+            setSearchQuery('');
+            return;
+          }
+
           setCurrentSong({ title: r.title, artist: r.artist, album: '', duration: 0, progress: 0, albumArt: r.albumUrl, isPlaying: true, source: 'soundcloud', permalink: r.permalink });
         } else {
           window.SonarPlayerControls?.playUri?.(r.uri);
