@@ -711,8 +711,11 @@ const App = () => {
   return (
   <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
     {/* Sidebar */}
-  <aside className="w-28 min-w-24 h-full flex flex-col dark-glass border-r border-[#23272a] shadow-lg p-3 gap-4">
-    <div className="flex flex-col items-center gap-4 w-full h-full sidebar-glass">
+  <aside
+    className="w-28 min-w-24 h-full flex flex-col dark-glass border-r border-[#23272a] shadow-lg p-3 gap-4"
+    style={{ backgroundImage: `url('/icons/dark-circular-gradient-05-10-2024-1728197886-hd-wallpaper.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center center' }}
+  >
+    <div className="flex flex-col items-center gap-4 w-full h-full sidebar-glass" style={{ background: 'rgba(0,0,0,0.35)' }}>
         {/* Artist / Song toggle at the top */}
         <div className="w-full">
           <div className="flex flex-col bg-[#23272a] rounded-2xl p-1 w-full">
