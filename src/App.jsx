@@ -23,6 +23,8 @@ function getSoundCloudAuthUrl() {
     redirect_uri: SOUNDCLOUD_REDIRECT_URI,
     response_type: "code"
   });
+  // Add a state flag so our backend knows this is a SoundCloud flow
+  params.set('state', 'sc');
   return `https://secure.soundcloud.com/authorize?${params.toString()}`;
 }
 
