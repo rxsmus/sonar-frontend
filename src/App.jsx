@@ -141,6 +141,8 @@ const App = () => {
     }
   }
   const [currentSong, setCurrentSong] = useState(null);
+  // Keep a ref to the latest currentSong to avoid stale closures in event handlers
+  const currentSongRef = useRef(null);
   // Mode: 'song' or 'artist'
   const [mode, setMode] = useState(() => sessionStorage.getItem('lobby_mode') || 'song');
   const [spotifyUser, setSpotifyUser] = useState(null);
@@ -180,6 +182,18 @@ const App = () => {
     const animal = animals[Math.floor(Math.random() * animals.length)];
     const number = Math.floor(Math.random() * 999) + 1;
     return `${color}-${animal}-${number}`;
+  }
+
+  // Helper to get higher-resolution SoundCloud artwork when possible
+  function getHighResArtwork(url) {
+    if (!url) return null;
+    try {
+      // Common SoundCloud artwork sizes: '-large', '-t50x50', '-t300x300'
+      // Prefer 't500x500' or remove the size suffix to get the original
+      return url.replace(/-large|-t\d+x\d+/i, '-t500x500');
+    } catch (e) {
+      return url;
+    }
   }
 
   // Helper to extract color and animal from username
@@ -448,13 +462,39 @@ const App = () => {
             });
             widget.bind(window.SC.Widget.Events.PLAY_PROGRESS, (progress) => {
               // progress.currentPosition is milliseconds, relativePosition in [0,1]
-              setCurrentSong(prev => ({ ...(prev || {}), progress: progress.currentPosition || 0, duration: progress.duration || prev?.duration || 0 }));
+              setCurrentSong(prev => {
+                const next = { ...(prev || {}), progress: progress.currentPosition || 0, duration: progress.duration || prev?.duration || 0 };
+                currentSongRef.current = next;
+                return next;
+              });
             });
-            widget.bind(window.SC.Widget.Events.PLAY, () => setCurrentSong(prev => ({ ...(prev || {}), isPlaying: true, source: 'soundcloud' })));
-            widget.bind(window.SC.Widget.Events.PAUSE, () => setCurrentSong(prev => ({ ...(prev || {}), isPlaying: false })));
-            widget.bind(window.SC.Widget.Events.FINISH, () => setCurrentSong(prev => ({ ...(prev || {}), isPlaying: false, progress: prev?.duration || 0 })));
+            widget.bind(window.SC.Widget.Events.PLAY, () => {
+              setCurrentSong(prev => {
+                const next = { ...(prev || {}), isPlaying: true, source: 'soundcloud' };
+                currentSongRef.current = next;
+                return next;
+              });
+            });
+            widget.bind(window.SC.Widget.Events.PAUSE, () => {
+              setCurrentSong(prev => {
+                const next = { ...(prev || {}), isPlaying: false };
+                currentSongRef.current = next;
+                return next;
+              });
+            });
+            widget.bind(window.SC.Widget.Events.FINISH, () => {
+              setCurrentSong(prev => {
+                const next = { ...(prev || {}), isPlaying: false, progress: prev?.duration || 0 };
+                currentSongRef.current = next;
+                return next;
+              });
+            });
 
-            setCurrentSong({ title: r.title, artist: r.artist, album: '', duration: 0, progress: 0, albumArt: r.albumUrl, isPlaying: true, source: 'soundcloud', permalink: r.permalink });
+            const scSong = { title: r.title, artist: r.artist, album: '', duration: 0, progress: 0, albumArt: getHighResArtwork(r.albumUrl), isPlaying: true, source: 'soundcloud', permalink: r.permalink };
+            setCurrentSong(scSong);
+            currentSongRef.current = scSong;
+            setSongId(null);
+            setArtist(r.artist || null);
           } catch (e) {
             console.warn('SC widget creation/play failed', e);
             // Last resort: open the permalink
@@ -463,7 +503,9 @@ const App = () => {
           }
         } else {
           window.SonarPlayerControls?.playUri?.(r.uri);
-          setCurrentSong(prev => ({ ...(prev || {}), isPlaying: true, source: 'spotify' }));
+          const spSong = { ...(currentSong || {}), isPlaying: true, source: 'spotify' };
+          setCurrentSong(spSong);
+          currentSongRef.current = spSong;
         }
       } catch (e) {
         console.error('playUri failed', e);
@@ -481,11 +523,16 @@ const App = () => {
       const data = e.detail;
       if (!data || !data.track_id) {
         setCurrentSong(null);
+        currentSongRef.current = null;
         setSongId(null);
         setArtist(null);
         return;
       }
-      setCurrentSong({
+      // If the user currently has an active SoundCloud song, don't let Spotify state overwrite it
+      if (currentSongRef.current && currentSongRef.current.source === 'soundcloud' && currentSongRef.current.isPlaying) {
+        return;
+      }
+      const spSong = {
         title: data.track_name,
         artist: data.artists,
         album: data.album_name,
@@ -493,7 +540,10 @@ const App = () => {
         progress: data.position,
         albumArt: data.album_image_url,
         isPlaying: data.isPlaying,
-      });
+        source: 'spotify'
+      };
+      setCurrentSong(spSong);
+      currentSongRef.current = spSong;
       setSongId(data.track_id);
       if (data.artists) setArtist(data.artists.split(',')[0].trim());
     };
@@ -816,7 +866,10 @@ const App = () => {
               <button
                 onClick={() => {
                   if (currentSong && currentSong.source === 'soundcloud') {
-                    try { audioRef.current && audioRef.current.play(); } catch (e) { console.warn(e); }
+                    try {
+                      if (scWidgetRef.current && scWidgetRef.current.play) scWidgetRef.current.play();
+                      else if (audioRef.current) audioRef.current.play();
+                    } catch (e) { console.warn(e); }
                   } else {
                     window.SonarPlayerControls?.play?.();
                   }
@@ -830,7 +883,10 @@ const App = () => {
               <button
                 onClick={() => {
                   if (currentSong && currentSong.source === 'soundcloud') {
-                    try { audioRef.current && audioRef.current.pause(); } catch (e) { console.warn(e); }
+                    try {
+                      if (scWidgetRef.current && scWidgetRef.current.pause) scWidgetRef.current.pause();
+                      else if (audioRef.current) audioRef.current.pause();
+                    } catch (e) { console.warn(e); }
                   } else {
                     window.SonarPlayerControls?.pause?.();
                   }
