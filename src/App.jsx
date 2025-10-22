@@ -2,6 +2,7 @@
 const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
 const SPOTIFY_REDIRECT_URI = "https://spotcord-1.onrender.com/callback";
 const SPOTIFY_SCOPES = "streaming user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-private user-read-email";
+// SoundCloud config
 const SOUNDCLOUD_CLIENT_ID = "rKvVUO0beLONnMPQZFodTSDluZBs3TJc";
 const SOUNDCLOUD_REDIRECT_URI = "https://spotcord-1.onrender.com/callback";
 
@@ -65,6 +66,11 @@ const App = () => {
   const [spotifyConnected, setSpotifyConnected] = useState(() => !!sessionStorage.getItem('spotify_code'));
   const [soundcloudConnected, setSoundcloudConnected] = useState(() => !!sessionStorage.getItem('soundcloud_code'));
 
+  // SoundCloud token state (retrieved from backend /sc_refresh)
+  const [soundcloudToken, setSoundcloudToken] = useState(null);
+  const [soundcloudTokenExpiry, setSoundcloudTokenExpiry] = useState(null);
+  const scRefreshTimerRef = useRef(null);
+
   useEffect(() => {
     // Read code returned in URL (after backend callback redirects to frontend)
     const params = new URLSearchParams(window.location.search);
@@ -81,8 +87,51 @@ const App = () => {
       setSoundcloudConnected(true);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
+    // If we already have a SoundCloud code in sessionStorage, fetch token
+    const existingScCode = sessionStorage.getItem('soundcloud_code');
+    if (existingScCode) {
+      refreshSoundCloudToken(existingScCode);
+    }
     // NOTE: do not auto-redirect; show a home page and let the user click "Log in to Spotify".
   }, []);
+
+  // Cleanup refresh timer on unmount
+  useEffect(() => {
+    return () => {
+      if (scRefreshTimerRef.current) clearTimeout(scRefreshTimerRef.current);
+    };
+  }, []);
+
+  // Refresh SoundCloud token (calls backend /sc_refresh which handles refresh if needed)
+  async function refreshSoundCloudToken(code) {
+    try {
+      const r = await fetch(`${BACKEND_BASE}/sc_refresh?code=${encodeURIComponent(code)}`);
+      const d = await r.json();
+      if (!r.ok || !d.access_token) {
+        console.warn('failed to get SoundCloud access token', d);
+        // If 401, clear stored code and connected state
+        if (r.status === 401) {
+          sessionStorage.removeItem('soundcloud_code');
+          setSoundcloudConnected(false);
+        }
+        return null;
+      }
+      setSoundcloudToken(d.access_token);
+      setSoundcloudTokenExpiry(d.expires_at || null);
+      // Schedule a refresh a bit before expiry (30s before)
+      if (d.expires_at) {
+        const msUntil = d.expires_at * 1000 - Date.now() - 30000;
+        if (msUntil > 0) {
+          if (scRefreshTimerRef.current) clearTimeout(scRefreshTimerRef.current);
+          scRefreshTimerRef.current = setTimeout(() => refreshSoundCloudToken(code), msUntil);
+        }
+      }
+      return d.access_token;
+    } catch (err) {
+      console.error('sc refresh error', err);
+      return null;
+    }
+  }
   const [currentSong, setCurrentSong] = useState(null);
   // Mode: 'song' or 'artist'
   const [mode, setMode] = useState(() => sessionStorage.getItem('lobby_mode') || 'song');
@@ -154,59 +203,83 @@ const App = () => {
   // Search UI state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  // searchSource: 'spotify' or 'soundcloud'
+  const [searchSource, setSearchSource] = useState(() => sessionStorage.getItem('search_source') || 'spotify');
   const searchInProgressRef = useRef(false);
   const [volume, setVolume] = useState(50);
+  // Audio element for SoundCloud playback
+  const audioRef = useRef(null);
 
   const performSearch = async (q) => {
     if (!q) return;
     searchInProgressRef.current = true;
     try {
-      const code = sessionStorage.getItem('spotify_code');
-      if (!code) {
-        setSearchResults([]);
-        return;
-      }
-      const tokenResp = await fetch(`${BACKEND_BASE}/refresh?code=${encodeURIComponent(code)}`);
-      const tokenData = await tokenResp.json();
-      if (!tokenResp.ok || !tokenData.access_token) {
-        console.warn('failed to get access token for search', tokenData);
-        // If the backend says no token cached, force a re-login by clearing
-        // sessionStorage and reloading the page so the app sends the user to
-        // Spotify auth (the app's useEffect will redirect).
-        if (tokenResp.status === 401) {
-          sessionStorage.clear();
-          window.location.href = getSpotifyAuthUrl();
+      if (searchSource === 'spotify') {
+        const code = sessionStorage.getItem('spotify_code');
+        if (!code) {
+          setSearchResults([]);
           return;
         }
-        setSearchResults([]);
-        return;
-      }
-      const token = tokenData.access_token;
-      const qEnc = encodeURIComponent(q);
-      const r = await fetch(`https://api.spotify.com/v1/search?q=${qEnc}&type=track&limit=15`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!r.ok) {
-        console.warn('spotify search failed', await r.text());
-        setSearchResults([]);
-        return;
-      }
-      const d = await r.json();
-      const items = (d.tracks && d.tracks.items) || [];
-      const mapped = items.map(track => {
-        const smallestAlbumImage = track.album.images.reduce((smallest, image) => {
-          if (!smallest || image.height < smallest.height) return image;
-          return smallest;
-        }, track.album.images[0]);
-        return {
+        const tokenResp = await fetch(`${BACKEND_BASE}/refresh?code=${encodeURIComponent(code)}`);
+        const tokenData = await tokenResp.json();
+        if (!tokenResp.ok || !tokenData.access_token) {
+          console.warn('failed to get access token for search', tokenData);
+          if (tokenResp.status === 401) {
+            sessionStorage.clear();
+            window.location.href = getSpotifyAuthUrl();
+            return;
+          }
+          setSearchResults([]);
+          return;
+        }
+        const token = tokenData.access_token;
+        const qEnc = encodeURIComponent(q);
+        const r = await fetch(`https://api.spotify.com/v1/search?q=${qEnc}&type=track&limit=15`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!r.ok) {
+          console.warn('spotify search failed', await r.text());
+          setSearchResults([]);
+          return;
+        }
+        const d = await r.json();
+        const items = (d.tracks && d.tracks.items) || [];
+        const mapped = items.map(track => {
+          const smallestAlbumImage = track.album.images.reduce((smallest, image) => {
+            if (!smallest || image.height < smallest.height) return image;
+            return smallest;
+          }, track.album.images[0]);
+          return {
+            id: track.id,
+            title: track.name,
+            artist: track.artists && track.artists[0] && track.artists[0].name,
+            uri: track.uri,
+            albumUrl: smallestAlbumImage ? smallestAlbumImage.url : null,
+            source: 'spotify'
+          };
+        });
+        setSearchResults(mapped);
+      } else {
+        // SoundCloud public search (client_id based)
+        const qEnc = encodeURIComponent(q);
+        const r = await fetch(`https://api.soundcloud.com/tracks?q=${qEnc}&client_id=${SOUNDCLOUD_CLIENT_ID}&limit=15`);
+        if (!r.ok) {
+          console.warn('soundcloud search failed', await r.text());
+          setSearchResults([]);
+          return;
+        }
+        const items = await r.json();
+        const mapped = (items || []).map(track => ({
           id: track.id,
-          title: track.name,
-          artist: track.artists && track.artists[0] && track.artists[0].name,
-          uri: track.uri,
-          albumUrl: smallestAlbumImage ? smallestAlbumImage.url : null,
-        };
-      });
-      setSearchResults(mapped);
+          title: track.title,
+          artist: track.user && track.user.username,
+          uri: track.permalink_url,
+          albumUrl: track.artwork_url || null,
+          source: 'soundcloud',
+          permalink: track.permalink_url
+        }));
+        setSearchResults(mapped);
+      }
     } catch (e) {
       console.error('search failed', e);
       setSearchResults([]);
@@ -274,13 +347,30 @@ const App = () => {
 
   // Stable callback so SearchResults doesn't re-render on every parent render.
   const handleSearchSelect = useCallback((r) => {
-    try {
-  window.SonarPlayerControls?.playUri?.(r.uri);
-    } catch (e) {
-      console.error('playUri failed', e);
-    }
-    setSearchResults([]);
-    setSearchQuery('');
+    (async () => {
+      try {
+        if (r.source === 'soundcloud') {
+          // stop spotify player if running
+          try { window.SonarPlayerControls?.pause?.(); } catch (e) {}
+          // Build stream URL: try direct stream endpoint with client_id
+          // Note: CORS may apply; if this fails you can fallback to opening permalink.
+          const streamUrl = `https://api.soundcloud.com/tracks/${r.id}/stream?client_id=${SOUNDCLOUD_CLIENT_ID}`;
+          if (!audioRef.current) audioRef.current = new Audio();
+          audioRef.current.src = streamUrl;
+          audioRef.current.crossOrigin = 'anonymous';
+          audioRef.current.play().catch(err => console.warn('soundcloud play failed', err));
+          setCurrentSong({ title: r.title, artist: r.artist, album: '', duration: 0, progress: 0, albumArt: r.albumUrl, isPlaying: true, source: 'soundcloud', permalink: r.permalink });
+        } else {
+          window.SonarPlayerControls?.playUri?.(r.uri);
+          setCurrentSong(prev => ({ ...(prev || {}), isPlaying: true, source: 'spotify' }));
+        }
+      } catch (e) {
+        console.error('playUri failed', e);
+      } finally {
+        setSearchResults([]);
+        setSearchQuery('');
+      }
+    })();
   }, []);
 
   // Fetch from Flask backend and set songId/artist
@@ -590,13 +680,13 @@ const App = () => {
           <div className="bg-black rounded-2xl p-4 shadow-lg border border-[#36393f]">
             <div ref={searchContainerRef}>
               <div className="flex items-center gap-2">
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') performSearch(searchQuery); }}
-                  placeholder="Search Spotify..."
-                  className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
-                />
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') performSearch(searchQuery); }}
+                      placeholder={searchSource === 'spotify' ? 'Search Spotify...' : 'Search SoundCloud...'}
+                      className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
+                    />
                 <button
                   onClick={(e) => { e.stopPropagation(); performSearch(searchQuery); }}
                   className="bg-[#5865f2] hover:bg-[#4752c4] text-white p-2 rounded"
@@ -604,6 +694,16 @@ const App = () => {
                 >
                   <SearchIcon className="w-4 h-4" />
                 </button>
+                    <div className="ml-2 flex items-center space-x-1">
+                      <button
+                        onClick={() => { setSearchSource('spotify'); sessionStorage.setItem('search_source', 'spotify'); }}
+                        className={`px-2 py-1 rounded text-xs ${searchSource === 'spotify' ? 'bg-[#1DB954] text-black' : 'bg-transparent text-gray-400 border border-[#1f2123]'}`}
+                      >Spotify</button>
+                      <button
+                        onClick={() => { setSearchSource('soundcloud'); sessionStorage.setItem('search_source', 'soundcloud'); }}
+                        className={`px-2 py-1 rounded text-xs ${searchSource === 'soundcloud' ? 'bg-[#ff5500] text-black' : 'bg-transparent text-gray-400 border border-[#1f2123]'}`}
+                      >SoundCloud</button>
+                    </div>
               </div>
               <div className="mt-3">
                 <SearchResults results={searchResults} onSelect={handleSearchSelect} />
@@ -611,7 +711,13 @@ const App = () => {
             </div>
             <div ref={controlsRef} className="mt-4 flex items-center justify-center gap-3">
               <button
-                onClick={() => window.SonarPlayerControls?.play?.()}
+                onClick={() => {
+                  if (currentSong && currentSong.source === 'soundcloud') {
+                    try { audioRef.current && audioRef.current.play(); } catch (e) { console.warn(e); }
+                  } else {
+                    window.SonarPlayerControls?.play?.();
+                  }
+                }}
                 title="Play"
                 className="bg-[#43b581] hover:bg-[#369e67] p-2 rounded-lg"
                 aria-label="Play"
@@ -619,7 +725,13 @@ const App = () => {
                 <Play className="w-4 h-4 text-white" />
               </button>
               <button
-                onClick={() => window.SonarPlayerControls?.pause?.()}
+                onClick={() => {
+                  if (currentSong && currentSong.source === 'soundcloud') {
+                    try { audioRef.current && audioRef.current.pause(); } catch (e) { console.warn(e); }
+                  } else {
+                    window.SonarPlayerControls?.pause?.();
+                  }
+                }}
                 title="Pause"
                 className="bg-[#5865f2] hover:bg-[#4752c4] p-2 rounded-lg"
                 aria-label="Pause"
@@ -636,6 +748,10 @@ const App = () => {
                     const v = Number(e.target.value);
                     setVolume(v);
                     try {
+                      if (currentSong && currentSong.source === 'soundcloud') {
+                        if (audioRef.current) audioRef.current.volume = v / 100;
+                        return;
+                      }
                       const code = sessionStorage.getItem('spotify_code');
                       if (!code) return;
                       const tokenResp = await fetch(`${BACKEND_BASE}/refresh?code=${encodeURIComponent(code)}`);
@@ -661,6 +777,8 @@ const App = () => {
               </div>
             </div>
           </div>
+          {/* Hidden audio element used for SoundCloud streaming */}
+          <audio ref={audioRef} style={{ display: 'none' }} />
 
           <div className="hidden">
             <WebPlayer code={sessionStorage.getItem('spotify_code')} showUI={false} />
