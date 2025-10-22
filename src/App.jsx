@@ -719,10 +719,10 @@ const App = () => {
         {/* spacer to push logos and logout to bottom */}
         <div style={{ flex: 1 }} />
 
-        {/* Bottom controls: Spotify icon, SoundCloud icon, Logout */}
+        {/* Bottom controls: stacked Spotify, SoundCloud, then Logout at the very bottom */}
         <div className="w-full flex flex-col items-center gap-3">
-          <div className="flex items-center gap-3">
-            {/* Spotify logo */}
+          <div className="w-full flex flex-col items-center gap-3">
+            {/* Spotify logo - enlarged to match logout button */}
             <button
               onClick={() => {
                 if (!spotifyConnected) {
@@ -730,19 +730,22 @@ const App = () => {
                 }
               }}
               title={spotifyConnected ? 'Connected to Spotify' : 'Connect to Spotify'}
-              className="relative"
+              className="relative w-14 h-14 flex items-center justify-center rounded-2xl bg-transparent hover:bg-[#0f0f0f] transition"
+              style={{ overflow: 'hidden' }}
             >
-              <img src="/icons/spotify.svg" alt="Spotify" className="w-8 h-8" />
-              <span style={{ position: 'absolute', right: -2, bottom: -2 }}>
+              <img src="/icons/spotify.svg" alt="Spotify" className="w-10 h-10 object-contain" />
+              <span style={{ position: 'absolute', right: 6, bottom: 6 }}>
                 {spotifyConnected ? (
-                  <div className="w-3 h-3 rounded-full" style={{ background: '#43b581', border: '1px solid #0f0f0f' }} />
+                  // filled green dot when connected
+                  <div className="w-3.5 h-3.5 rounded-full" style={{ background: '#43b581', border: '1px solid rgba(0,0,0,0.6)' }} />
                 ) : (
-                  <div className="w-3 h-3 rounded-full" style={{ border: '2px solid #6b7280', background: 'transparent' }} />
+                  // empty grey ring when not connected
+                  <div className="w-3.5 h-3.5 rounded-full" style={{ border: '2px solid #6b7280', background: 'transparent' }} />
                 )}
               </span>
             </button>
 
-            {/* SoundCloud logo */}
+            {/* SoundCloud logo - enlarged to match logout button */}
             <button
               onClick={() => {
                 if (!soundcloudConnected) {
@@ -750,36 +753,42 @@ const App = () => {
                 }
               }}
               title={soundcloudConnected ? 'Connected to SoundCloud' : 'Connect to SoundCloud'}
-              className="relative"
+              className="relative w-14 h-14 flex items-center justify-center rounded-2xl bg-transparent hover:bg-[#0f0f0f] transition"
+              style={{ overflow: 'hidden' }}
             >
-              <img src="/icons/soundcloud.svg" alt="SoundCloud" className="w-8 h-8" />
-              <span style={{ position: 'absolute', right: -2, bottom: -2 }}>
+              <img src="/icons/soundcloud.svg" alt="SoundCloud" className="w-10 h-10 object-contain" />
+              <span style={{ position: 'absolute', right: 6, bottom: 6 }}>
                 {soundcloudConnected ? (
-                  <div className="w-3 h-3 rounded-full" style={{ background: '#ff5500', border: '1px solid #0f0f0f' }} />
+                  // filled green dot when connected
+                  <div className="w-3.5 h-3.5 rounded-full" style={{ background: '#43b581', border: '1px solid rgba(0,0,0,0.6)' }} />
                 ) : (
-                  <div className="w-3 h-3 rounded-full" style={{ border: '2px solid #6b7280', background: 'transparent' }} />
+                  // empty grey ring when not connected
+                  <div className="w-3.5 h-3.5 rounded-full" style={{ border: '2px solid #6b7280', background: 'transparent' }} />
                 )}
               </span>
             </button>
           </div>
 
-          <button
-            className="w-14 h-14 bg-[#ed4245] text-white rounded-2xl flex items-center justify-center hover:bg-[#b3242a] transition self-center mb-2"
-            title="Log out"
-            onClick={() => {
-              // stop players and cleanup
-              stopOtherPlayersExcept(null);
-              sessionStorage.clear();
-              setSpotifyConnected(false);
-              setSoundcloudConnected(false);
-              // stay on the app home after logout
-              window.location.href = '/';
-            }}
-            aria-label="Log out"
-          >
-            <img src="/icons/logout-svgrepo-com.svg" alt="Log out" className="w-8 h-8 filter brightness-0 invert" />
-            <span className="sr-only">Log out</span>
-          </button>
+          {/* Logout button anchored at the very bottom */}
+          <div className="w-full flex justify-center mt-auto">
+            <button
+              className="w-14 h-14 bg-[#ed4245] text-white rounded-2xl flex items-center justify-center hover:bg-[#b3242a] transition mb-2"
+              title="Log out"
+              onClick={() => {
+                // stop players and cleanup
+                stopOtherPlayersExcept(null);
+                sessionStorage.clear();
+                setSpotifyConnected(false);
+                setSoundcloudConnected(false);
+                // stay on the app home after logout
+                window.location.href = '/';
+              }}
+              aria-label="Log out"
+            >
+              <img src="/icons/logout-svgrepo-com.svg" alt="Log out" className="w-8 h-8 filter brightness-0 invert" />
+              <span className="sr-only">Log out</span>
+            </button>
+          </div>
         </div>
       </div>
     </aside>
