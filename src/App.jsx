@@ -3,7 +3,7 @@ const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
 const SPOTIFY_REDIRECT_URI = "https://spotcord-1.onrender.com/callback";
 const SPOTIFY_SCOPES = "streaming user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-private user-read-email";
 const SOUNDCLOUD_CLIENT_ID = "rKvVUO0beLONnMPQZFodTSDluZBs3TJc";
-const SOUNDCLOUD_REDIRECT_URI = "https://spotcord-1.onrender.com/callback";
+const SOUNDCLOUD_REDIRECT_URI = "https://spotcord-1_cd.onrender.com/callback";
 
 function getSpotifyAuthUrl() {
   const params = new URLSearchParams({
