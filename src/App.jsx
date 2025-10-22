@@ -752,7 +752,7 @@ const App = () => {
                   className="relative w-14 h-14 flex items-center justify-center rounded-2xl bg-transparent hover:bg-[#0f0f0f] transition"
                   style={{ overflow: 'hidden' }}
                 >
-                  <img src="/icons/spotify-tile.svg" alt="Spotify" className="w-20 h-20" />
+                  <img src="/icons/spotify-tile.svg" alt="Spotify" className="w-50 h-50" />
                   <span style={{ position: 'absolute', right: 6, bottom: 6 }}>
                     {spotifyConnected ? (
                       // filled green dot when connected
@@ -775,7 +775,7 @@ const App = () => {
               className="relative w-14 h-14 flex items-center justify-center rounded-2xl bg-transparent hover:bg-[#0f0f0f] transition"
               style={{ overflow: 'hidden' }}
             >
-                  <img src="/icons/soundcloud-tile.svg" alt="SoundCloud" className="w-20 h-20" />
+                  <img src="/icons/soundcloud-tile.svg" alt="SoundCloud" className="w-50 h-50" />
               <span style={{ position: 'absolute', right: 6, bottom: 6 }}>
                 {soundcloudConnected ? (
                   // filled green dot when connected
