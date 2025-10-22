@@ -289,7 +289,29 @@ const App = () => {
     // If switching to soundcloud, pause Spotify playback
     if (source !== 'spotify') {
       try {
-        if (window.SonarPlayerControls && window.SonarPlayerControls.pause) window.SonarPlayerControls.pause();
+        // Try pausing via our in-page player controls first
+        if (window.SonarPlayerControls && window.SonarPlayerControls.pause) {
+          try { window.SonarPlayerControls.pause(); } catch (e) {}
+        }
+        // Also make a best-effort call to Spotify Web API to pause the user's active device
+        // This helps when the WebPlayer SDK is racing with the Widget and Spotify keeps taking over.
+        const code = sessionStorage.getItem('spotify_code');
+        if (code) {
+          (async () => {
+            try {
+              const tokenResp = await fetch(`${BACKEND_BASE}/refresh?code=${encodeURIComponent(code)}`);
+              const tokenData = await tokenResp.json();
+              if (tokenResp.ok && tokenData.access_token) {
+                await fetch('https://api.spotify.com/v1/me/player/pause', {
+                  method: 'PUT',
+                  headers: { Authorization: `Bearer ${tokenData.access_token}` },
+                });
+              }
+            } catch (err) {
+              // ignore errors; this is best-effort
+            }
+          })();
+        }
       } catch (e) {}
     }
   }
@@ -688,8 +710,8 @@ const App = () => {
   return (
   <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
     {/* Sidebar */}
-  <aside className="w-28 min-w-24 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-3 gap-4 justify-between">
-      <div className="flex flex-col items-center gap-4 w-full">
+  <aside className="w-28 min-w-24 h-full flex flex-col bg-[#18191a] border-r border-[#23272a] shadow-lg p-3 gap-4">
+    <div className="flex flex-col items-center gap-4 w-full h-full">
         {/* Artist / Song toggle at the top */}
         <div className="w-full">
           <div className="flex flex-col bg-[#23272a] rounded-2xl p-1 w-full">
@@ -716,11 +738,8 @@ const App = () => {
           <span>{onlineUsers.length}</span>
         </div>
 
-        {/* spacer to push logos and logout to bottom */}
-        <div style={{ flex: 1 }} />
-
-        {/* Bottom controls: stacked Spotify, SoundCloud, then Logout at the very bottom */}
-        <div className="w-full flex flex-col items-center gap-3">
+  {/* Bottom controls: stacked Spotify, SoundCloud, then Logout at the very bottom */}
+  <div className="w-full flex flex-col items-center gap-3 mt-auto">
           <div className="w-full flex flex-col items-center gap-3">
             {/* Spotify logo - enlarged to match logout button */}
             <button
@@ -733,7 +752,7 @@ const App = () => {
               className="relative w-14 h-14 flex items-center justify-center rounded-2xl bg-transparent hover:bg-[#0f0f0f] transition"
               style={{ overflow: 'hidden' }}
             >
-              <img src="/icons/spotify.svg" alt="Spotify" className="w-10 h-10 object-contain" />
+              <img src="/icons/spotify-tile.svg" alt="Spotify" className="w-10 h-10 object-contain" />
               <span style={{ position: 'absolute', right: 6, bottom: 6 }}>
                 {spotifyConnected ? (
                   // filled green dot when connected
@@ -756,7 +775,7 @@ const App = () => {
               className="relative w-14 h-14 flex items-center justify-center rounded-2xl bg-transparent hover:bg-[#0f0f0f] transition"
               style={{ overflow: 'hidden' }}
             >
-              <img src="/icons/soundcloud.svg" alt="SoundCloud" className="w-10 h-10 object-contain" />
+              <img src="/icons/soundcloud-tile.svg" alt="SoundCloud" className="w-10 h-10 object-contain" />
               <span style={{ position: 'absolute', right: 6, bottom: 6 }}>
                 {soundcloudConnected ? (
                   // filled green dot when connected
