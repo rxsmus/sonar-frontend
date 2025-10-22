@@ -87,14 +87,20 @@ const App = () => {
     if (scCode) {
       sessionStorage.setItem('soundcloud_code', scCode);
       setSoundcloudConnected(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
+      // After successful SoundCloud auth, send user into the app (Now Playing)
+      // navigate to the general lobby so the UI shows the main experience
+      window.history.replaceState({}, document.title, '/lobby/general');
+      // Immediately fetch/refresh SoundCloud token for this code so the app can play/search with auth
+      try { refreshSoundCloudToken(scCode); } catch (e) { console.warn('sc token refresh failed', e); }
+      // Also remove the sc_code param from the URL (now replaced)
+      // If you prefer a hard navigation instead, use: window.location.href = '/lobby/general';
     }
     // If we already have a SoundCloud code in sessionStorage, fetch token
     const existingScCode = sessionStorage.getItem('soundcloud_code');
     if (existingScCode) {
       refreshSoundCloudToken(existingScCode);
     }
-    // NOTE: do not auto-redirect; show a home page and let the user click "Log in to Spotify".
+    // NOTE: we intentionally don't force a redirect to the login page here.
   }, []);
 
   // Cleanup refresh timer on unmount
@@ -484,7 +490,8 @@ const App = () => {
     if (e.key === 'Enter') handleSendMessage();
   };
 
-  if (!spotifyConnected) {
+  // Render app if either Spotify OR SoundCloud is connected
+  if (!spotifyConnected && !soundcloudConnected) {
     return (
       <div className="fixed inset-0 w-screen h-screen bg-black text-gray-100 overflow-hidden flex">
         <main className="flex-1 h-full px-8 py-8 flex items-center">
@@ -681,14 +688,25 @@ const App = () => {
           {/* Separate Player card */}
           <div className="bg-black rounded-2xl p-4 shadow-lg border border-[#36393f]">
             <div ref={searchContainerRef}>
+              {/* Provider toggle above the search bar */}
+              <div className="mb-3 flex items-center gap-2">
+                <button
+                  onClick={() => { setSearchSource('spotify'); sessionStorage.setItem('search_source', 'spotify'); }}
+                  className={`px-3 py-2 rounded text-sm font-medium ${searchSource === 'spotify' ? 'bg-[#1DB954] text-black' : 'bg-transparent text-gray-400 border border-[#1f2123]'}`}
+                >Spotify</button>
+                <button
+                  onClick={() => { setSearchSource('soundcloud'); sessionStorage.setItem('search_source', 'soundcloud'); }}
+                  className={`px-3 py-2 rounded text-sm font-medium ${searchSource === 'soundcloud' ? 'bg-[#ff5500] text-black' : 'bg-transparent text-gray-400 border border-[#1f2123]'}`}
+                >SoundCloud</button>
+              </div>
               <div className="flex items-center gap-2">
-                    <input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') performSearch(searchQuery); }}
-                      placeholder={searchSource === 'spotify' ? 'Search Spotify...' : 'Search SoundCloud...'}
-                      className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
-                    />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') performSearch(searchQuery); }}
+                  placeholder={searchSource === 'spotify' ? 'Search Spotify...' : 'Search SoundCloud...'}
+                  className="flex-1 bg-transparent border border-[#1f2123] rounded px-3 py-2 text-sm text-white focus:outline-none"
+                />
                 <button
                   onClick={(e) => { e.stopPropagation(); performSearch(searchQuery); }}
                   className="bg-[#5865f2] hover:bg-[#4752c4] text-white p-2 rounded"
@@ -696,16 +714,6 @@ const App = () => {
                 >
                   <SearchIcon className="w-4 h-4" />
                 </button>
-                    <div className="ml-2 flex items-center space-x-1">
-                      <button
-                        onClick={() => { setSearchSource('spotify'); sessionStorage.setItem('search_source', 'spotify'); }}
-                        className={`px-2 py-1 rounded text-xs ${searchSource === 'spotify' ? 'bg-[#1DB954] text-black' : 'bg-transparent text-gray-400 border border-[#1f2123]'}`}
-                      >Spotify</button>
-                      <button
-                        onClick={() => { setSearchSource('soundcloud'); sessionStorage.setItem('search_source', 'soundcloud'); }}
-                        className={`px-2 py-1 rounded text-xs ${searchSource === 'soundcloud' ? 'bg-[#ff5500] text-black' : 'bg-transparent text-gray-400 border border-[#1f2123]'}`}
-                      >SoundCloud</button>
-                    </div>
               </div>
               <div className="mt-3">
                 <SearchResults results={searchResults} onSelect={handleSearchSelect} />
