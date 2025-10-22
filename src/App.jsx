@@ -256,6 +256,44 @@ const App = () => {
     });
   }
 
+  // Cleanup SoundCloud widget/iframe if present
+  function cleanupSCPlayer() {
+    try {
+      if (scWidgetRef.current && scWidgetRef.current.unbind) {
+        try {
+          scWidgetRef.current.unbind(window.SC.Widget.Events.PLAY_PROGRESS);
+          scWidgetRef.current.unbind(window.SC.Widget.Events.PLAY);
+          scWidgetRef.current.unbind(window.SC.Widget.Events.PAUSE);
+          scWidgetRef.current.unbind(window.SC.Widget.Events.FINISH);
+        } catch (e) {}
+      }
+    } catch (e) {}
+    try {
+      if (scIframeRef.current && scIframeRef.current.remove) {
+        scIframeRef.current.remove();
+      }
+    } catch (e) {}
+    scWidgetRef.current = null;
+    scIframeRef.current = null;
+  }
+
+  // Stop other players except the one specified (source: 'spotify'|'soundcloud'|null)
+  function stopOtherPlayersExcept(source) {
+    // If we're switching to spotify, ensure SC is stopped and removed
+    if (source !== 'soundcloud') {
+      try {
+        if (scWidgetRef.current && scWidgetRef.current.pause) scWidgetRef.current.pause();
+      } catch (e) {}
+      cleanupSCPlayer();
+    }
+    // If switching to soundcloud, pause Spotify playback
+    if (source !== 'spotify') {
+      try {
+        if (window.SonarPlayerControls && window.SonarPlayerControls.pause) window.SonarPlayerControls.pause();
+      } catch (e) {}
+    }
+  }
+
   const performSearch = async (q) => {
     if (!q) return;
     searchInProgressRef.current = true;
@@ -413,8 +451,8 @@ const App = () => {
     (async () => {
       try {
         if (r.source === 'soundcloud') {
-          // stop spotify player if running
-          try { window.SonarPlayerControls?.pause?.(); } catch (e) {}
+          // stop spotify player if running and cleanup any previous players
+          stopOtherPlayersExcept('soundcloud');
 
           // Cleanup existing widget/iframe if present
           try {
@@ -493,7 +531,8 @@ const App = () => {
             const scSong = { title: r.title, artist: r.artist, album: '', duration: 0, progress: 0, albumArt: getHighResArtwork(r.albumUrl), isPlaying: true, source: 'soundcloud', permalink: r.permalink };
             setCurrentSong(scSong);
             currentSongRef.current = scSong;
-            setSongId(null);
+            // Use a namespaced songId for SoundCloud so /lobby/<songId> routing works
+            setSongId(`sc-${r.id}`);
             setArtist(r.artist || null);
           } catch (e) {
             console.warn('SC widget creation/play failed', e);
@@ -502,6 +541,7 @@ const App = () => {
             setCurrentSong(prev => ({ ...(prev || {}), isPlaying: false }));
           }
         } else {
+          stopOtherPlayersExcept('spotify');
           window.SonarPlayerControls?.playUri?.(r.uri);
           const spSong = { ...(currentSong || {}), isPlaying: true, source: 'spotify' };
           setCurrentSong(spSong);
@@ -701,8 +741,11 @@ const App = () => {
         className="w-14 h-14 bg-[#ed4245] text-white rounded-2xl flex items-center justify-center hover:bg-[#b3242a] transition self-center mb-2"
         title="Log out"
         onClick={() => {
+          // stop players and cleanup
+          stopOtherPlayersExcept(null);
           sessionStorage.clear();
           setSpotifyConnected(false);
+          setSoundcloudConnected(false);
           // stay on the app home after logout
           window.location.href = '/';
         }}
@@ -834,11 +877,11 @@ const App = () => {
               {/* Provider toggle above the search bar */}
               <div className="mb-3 flex items-center gap-2">
                 <button
-                  onClick={() => { setSearchSource('spotify'); sessionStorage.setItem('search_source', 'spotify'); }}
+                  onClick={() => { stopOtherPlayersExcept('spotify'); setSearchSource('spotify'); sessionStorage.setItem('search_source', 'spotify'); }}
                   className={`px-3 py-2 rounded text-sm font-medium ${searchSource === 'spotify' ? 'bg-[#1DB954] text-black' : 'bg-transparent text-gray-400 border border-[#1f2123]'}`}
                 >Spotify</button>
                 <button
-                  onClick={() => { setSearchSource('soundcloud'); sessionStorage.setItem('search_source', 'soundcloud'); }}
+                  onClick={() => { stopOtherPlayersExcept('soundcloud'); setSearchSource('soundcloud'); sessionStorage.setItem('search_source', 'soundcloud'); }}
                   className={`px-3 py-2 rounded text-sm font-medium ${searchSource === 'soundcloud' ? 'bg-[#ff5500] text-black' : 'bg-transparent text-gray-400 border border-[#1f2123]'}`}
                 >SoundCloud</button>
               </div>
