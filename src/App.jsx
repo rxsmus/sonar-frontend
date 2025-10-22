@@ -2,6 +2,8 @@
 const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
 const SPOTIFY_REDIRECT_URI = "https://spotcord-1.onrender.com/callback";
 const SPOTIFY_SCOPES = "streaming user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-private user-read-email";
+const SOUNDCLOUD_CLIENT_ID = "rKvVUO0beLONnMPQZFodTSDluZBs3TJc";
+const SOUNDCLOUD_REDIRECT_URI = "https://spotcord-1.onrender.com/sc_callback";
 
 function getSpotifyAuthUrl() {
   const params = new URLSearchParams({
@@ -12,6 +14,15 @@ function getSpotifyAuthUrl() {
     show_dialog: "true"
   });
   return `https://accounts.spotify.com/authorize?${params.toString()}`;
+}
+
+function getSoundCloudAuthUrl() {
+  const params = new URLSearchParams({
+    client_id: SOUNDCLOUD_CLIENT_ID,
+    redirect_uri: SOUNDCLOUD_REDIRECT_URI,
+    response_type: "code"
+  });
+  return `https://secure.soundcloud.com/authorize?${params.toString()}`;
 }
 
 import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
@@ -249,7 +260,7 @@ const App = () => {
             Log in to Spotify
           </button>
           <button
-            onClick={() => { window.location.href = `https://soundcloud.com/connect?client_id=${encodeURIComponent('YOUR_SOUNDCLOUD_CLIENT_ID')}&redirect_uri=${encodeURIComponent('https://spotcord-1.onrender.com/sc_callback')}&response_type=code&scope=non-expiring`; }}
+            onClick={() => { window.location.href = getSoundCloudAuthUrl(); }}
             className="bg-[#ff5500] hover:bg-[#e64b00] text-white px-6 py-3 rounded-lg font-semibold"
           >
             Log in to SoundCloud
