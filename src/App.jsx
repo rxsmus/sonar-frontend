@@ -1,10 +1,10 @@
 // Spotify OAuth config
-const SPOTIFY_CLIENT_ID = "51dd9a50cd994a7e8e374fc2169c6f25";
-const SPOTIFY_REDIRECT_URI = "https://spotcord-1.onrender.com/callback";
-const SPOTIFY_SCOPES = "streaming user-read-currently-playing user-read-playback-state user-modify-playback-state user-read-private user-read-email";
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URL;
+const SPOTIFY_SCOPES = process.env.SPOTIFY_SCOPE;
 // SoundCloud config
-const SOUNDCLOUD_CLIENT_ID = "rKvVUO0beLONnMPQZFodTSDluZBs3TJc";
-const SOUNDCLOUD_REDIRECT_URI = "https://spotcord-1.onrender.com/callback";
+const SOUNDCLOUD_CLIENT_ID = process.env.SOUNDCLOUD_CLIENT_ID;
+const SOUNDCLOUD_REDIRECT_URI = process.env.SOUNDCLOUD_REDIRECT_URI;
 
 function getSpotifyAuthUrl() {
   const params = new URLSearchParams({
@@ -35,8 +35,7 @@ import { io } from 'socket.io-client';
 import { MessageCircle, Music, User, Send, Heart, Play, Pause, Search as SearchIcon } from 'lucide-react';
 import WebPlayer from './WebPlayer';
 
-// Top-level stable SearchResults component. Kept out of App to avoid
-// remounting during frequent parent re-renders (e.g. progress updates).
+
 const SearchResults = memo(function SearchResults({ results, onSelect }) {
   if (!results || results.length === 0) return null;
   return (
@@ -75,7 +74,7 @@ const App = () => {
   const scRefreshTimerRef = useRef(null);
 
   useEffect(() => {
-    // Read code returned in URL (after backend callback redirects to frontend)
+    // Read code returned in URL
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const scCode = params.get('sc_code');
@@ -89,19 +88,15 @@ const App = () => {
       sessionStorage.setItem('soundcloud_code', scCode);
       setSoundcloudConnected(true);
       // After successful SoundCloud auth, send user into the app (Now Playing)
-      // navigate to the general lobby so the UI shows the main experience
       window.history.replaceState({}, document.title, '/lobby/general');
       // Immediately fetch/refresh SoundCloud token for this code so the app can play/search with auth
       try { refreshSoundCloudToken(scCode); } catch (e) { console.warn('sc token refresh failed', e); }
-      // Also remove the sc_code param from the URL (now replaced)
-      // If you prefer a hard navigation instead, use: window.location.href = '/lobby/general';
     }
     // If we already have a SoundCloud code in sessionStorage, fetch token
     const existingScCode = sessionStorage.getItem('soundcloud_code');
     if (existingScCode) {
       refreshSoundCloudToken(existingScCode);
     }
-    // NOTE: we intentionally don't force a redirect to the login page here.
   }, []);
 
   // Cleanup refresh timer on unmount
@@ -111,7 +106,7 @@ const App = () => {
     };
   }, []);
 
-  // Refresh SoundCloud token (calls backend /sc_refresh which handles refresh if needed)
+  // Refresh SoundCloud token
   async function refreshSoundCloudToken(code) {
     try {
       const r = await fetch(`${BACKEND_BASE}/sc_refresh?code=${encodeURIComponent(code)}`);
@@ -189,8 +184,7 @@ const App = () => {
   function getHighResArtwork(url) {
     if (!url) return null;
     try {
-      // Common SoundCloud artwork sizes: '-large', '-t50x50', '-t300x300'
-      // Prefer 't500x500' or remove the size suffix to get the original
+      // SoundCloud artwork sizes: '-large', '-t50x50', '-t300x300'
       return url.replace(/-large|-t\d+x\d+/i, '-t500x500');
     } catch (e) {
       return url;
@@ -294,8 +288,7 @@ const App = () => {
         if (window.SonarPlayerControls && window.SonarPlayerControls.pause) {
           try { window.SonarPlayerControls.pause(); } catch (e) {}
         }
-        // Also make a best-effort call to Spotify Web API to pause the user's active device
-        // This helps when the WebPlayer SDK is racing with the Widget and Spotify keeps taking over.
+        // call to Spotify Web API to pause the user's active device
         const code = sessionStorage.getItem('spotify_code');
         if (code) {
           (async () => {
@@ -309,7 +302,6 @@ const App = () => {
                 });
               }
             } catch (err) {
-              // ignore errors; this is best-effort
             }
           })();
         }
@@ -373,12 +365,12 @@ const App = () => {
         const params = `q=${qEnc}&limit=15&access=playable&linked_partitioning=true`;
         let r;
         if (soundcloudToken) {
-          // Authenticated search (better results, avoids client_id deprecation issues)
+          // Authenticated search
           r = await fetch(`https://api.soundcloud.com/tracks?${params}`, {
             headers: { Authorization: `OAuth ${soundcloudToken}` },
           });
         } else {
-          // Fallback to public client_id (may be rate-limited or unsupported for some accounts)
+          // Fallback to public client_id
           r = await fetch(`https://api.soundcloud.com/tracks?${params}&client_id=${SOUNDCLOUD_CLIENT_ID}`);
         }
         if (!r.ok) {
@@ -387,7 +379,6 @@ const App = () => {
           return;
         }
         const data = await r.json();
-        // The API may return either an array of tracks or an object with a `collection` array
         const items = Array.isArray(data) ? data : data.collection || [];
         const mapped = (items || []).map(track => ({
           id: track.id,
@@ -423,8 +414,7 @@ const App = () => {
       const container = searchContainerRef.current;
       const controls = controlsRef.current;
       if (!container) return;
-      // If the event is inside the search container or inside the player
-      // controls area (play/pause/volume), don't close the results.
+      // If the event is inside the search container or inside the player, don't close the results.
       if (container.contains(e.target) || (controls && controls.contains(e.target))) {
         return;
       }
@@ -492,7 +482,7 @@ const App = () => {
             scWidgetRef.current = null;
           }
 
-          // Ensure widget script is loaded and then create an iframe player via the Widget API
+          // Ensure widget script is loaded and create new iframe + widget
           try {
             await loadSCWidgetScript();
             const trackApiUrl = encodeURIComponent(`https://api.soundcloud.com/tracks/${r.id}`);
@@ -658,9 +648,7 @@ const App = () => {
   }, [mode, songId, artist]);
 
 
-  // Connect to socket.io namespace for this songId or general
-
-
+  // Connect to socket.io namespace for this songId or general lobby
   useEffect(() => {
     let lobby = 'general';
     if (mode === 'artist' && artist) {
@@ -701,9 +689,6 @@ const App = () => {
     };
   }, [username, songId, artist, mode]);
 
-
-
-
   const handleSendMessage = () => {
     if (!newMessage.trim() || !socketRef.current) return;
     const msg = {
@@ -716,12 +701,10 @@ const App = () => {
     setNewMessage("");
   };
 
-
-  // Like functionality removed
-
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleSendMessage();
   };
+
 
   // Render app if either Spotify OR SoundCloud is connected
   if (!spotifyConnected && !soundcloudConnected) {
@@ -769,10 +752,10 @@ const App = () => {
           <span>{onlineUsers.length}</span>
         </div>
 
-  {/* Bottom controls: stacked Spotify, SoundCloud, then Logout at the very bottom */}
+  {/* Bottom controls: stacked Spotify, SoundCloud, then Logout*/}
   <div className="w-full flex flex-col items-center gap-3 mt-auto">
           <div className="w-full flex flex-col items-center gap-3">
-            {/* Spotify logo - enlarged to match logout button */}
+            {/* Spotify logo*/}
             <button
               onClick={() => {
                 if (!spotifyConnected) {
@@ -793,7 +776,7 @@ const App = () => {
               </span>
             </button>
 
-            {/* SoundCloud logo - enlarged to match logout button */}
+            {/* SoundCloud logo*/}
             <button
               onClick={() => {
                 if (!soundcloudConnected) {
@@ -815,7 +798,7 @@ const App = () => {
             </button>
           </div>
 
-          {/* Logout button anchored at the very bottom */}
+          {/*Logout button*/}
           <div className="w-full flex justify-center mt-auto">
             <button
               className="w-14 h-14 bg-[#ed4245] text-white rounded-2xl flex items-center justify-center hover:bg-[#b3242a] transition mb-2"
@@ -848,7 +831,7 @@ const App = () => {
               <Music className="w-5 h-5 text-[#5865f2]" />
               Now Playing
             </h2>
-            {/* Debug output removed as requested */}
+            {/*Debug output*/}
             {error ? (
               <p className="text-red-400">{error}</p>
             ) : !currentSong ? (
@@ -881,7 +864,6 @@ const App = () => {
                       />
                     </div>
                   )}
-                  {/* Player controls moved to bottom bar */}
                 </div>
               </div>
             )}

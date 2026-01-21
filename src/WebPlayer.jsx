@@ -12,10 +12,6 @@ export default function WebPlayer({ code, showUI = false }) {
   const [error, setError] = useState(null);
   const [tokenScope, setTokenScope] = useState(null);
 
-  // We'll load the Spotify SDK from inside the main effect so we can
-  // register the global `onSpotifyWebPlaybackSDKReady` handler before the
-  // script executes (avoids race where the SDK expects the handler to exist).
-
   // Helper to get a fresh token from backend
   const fetchAccessToken = async () => {
     try {
@@ -136,8 +132,6 @@ export default function WebPlayer({ code, showUI = false }) {
 
       player.connect();
       // Start a short poll to read the player's current state frequently.
-      // Some SDKs emit player_state_changed infrequently; polling getCurrentState
-      // gives us smooth/near-real-time progress updates without manual increments.
       const pollIntervalMs = 250;
       const pollId = setInterval(async () => {
         try {
@@ -156,18 +150,16 @@ export default function WebPlayer({ code, showUI = false }) {
           };
           window.dispatchEvent(new CustomEvent('sonar_player_state', { detail }));
         } catch (e) {
-          // ignore transient errors
         }
       }, pollIntervalMs);
-      // Save poll id so cleanup can clear it; attach to playerRef for access in cleanup
+      // Save poll id so cleanup can clear it
       playerRef.current._pollId = pollId;
-      // If the player doesn't become ready within 12s, surface an error
+      // If the player doesn't become ready within 12s -> error
       readyTimeout = setTimeout(() => {
         if (!deviceRef.current) {
           setError('Web Playback SDK did not become ready — check that your app origin and redirect URI are registered in the Spotify Developer dashboard and that the account is Premium.');
         }
       }, 12000);
-      // Expose controls to the window so parent UI can call them
       // Helper to play a specific Spotify URI on the current device
       const playUri = async (uri) => {
         try {
@@ -204,7 +196,7 @@ export default function WebPlayer({ code, showUI = false }) {
         }
       };
 
-      // Search and return track results (useful for showing a results list in the UI)
+      // Search and return track results
       const search = async (query) => {
         try {
           const token = await fetchAccessToken();
@@ -230,8 +222,6 @@ export default function WebPlayer({ code, showUI = false }) {
         }
       };
 
-      // window.deviceRef is already a useRef defined above; ensure it's set by
-      // the ready listener. Expose control functions using that ref.
   window.SonarPlayerControls = {
         play: async () => {
           try {
@@ -271,7 +261,7 @@ export default function WebPlayer({ code, showUI = false }) {
             if (playerRef.current && typeof playerRef.current.getCurrentState === 'function') {
               try {
                 const state = await playerRef.current.getCurrentState();
-                // If we have state and it's playing, togglePlay to pause
+                // If there is state and it's playing, togglePlay to pause
                 if (state && !state.paused) {
                   if (typeof playerRef.current.togglePlay === 'function') {
                     await playerRef.current.togglePlay();
@@ -331,8 +321,7 @@ export default function WebPlayer({ code, showUI = false }) {
       };
     };
 
-    // Wait for SDK global to be ready. Register the global handler BEFORE
-    // appending the script so the SDK can call it immediately when it runs.
+    // Wait for SDK global to be ready.
     window.onSpotifyWebPlaybackSDKReady = onSpotifyWebPlaybackSDKReady;
     if (window.Spotify) {
       // SDK already present (dev/live reload), call handler now
@@ -381,8 +370,6 @@ export default function WebPlayer({ code, showUI = false }) {
   };
 
   if (!code) return null;
-
-  // If developer wants UI, render minimal status + button; otherwise no UI (we dispatch events)
   if (!showUI) return null;
 
   return (
